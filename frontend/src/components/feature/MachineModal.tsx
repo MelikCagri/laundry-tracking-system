@@ -1,30 +1,86 @@
 import React from 'react';
 import { Machine } from '../../types';
+import { startMachine, clearMachine, reportMachine, getOwnerWhatsApp } from '../../services/api';
 
 interface MachineModalProps {
   machine: Machine | null;
   isOpen: boolean;
   onClose: () => void;
   onToggleQueue?: (machineId: string) => void;
+  executeWithAuth?: (action: (userId: string) => void) => void;
+  onActionSuccess?: () => void;
 }
 
-const MachineModal: React.FC<MachineModalProps> = ({ machine, isOpen, onClose, onToggleQueue }) => {
+const MachineModal: React.FC<MachineModalProps> = ({ machine, isOpen, onClose, onToggleQueue, executeWithAuth, onActionSuccess }) => {
   if (!isOpen || !machine) return null;
 
   const getStatusBadge = (status: Machine['status']) => {
     switch (status) {
-      case 'Empty': return 'bg-green-100 text-green-700 border-green-200';
-      case 'Full': return 'bg-red-100 text-red-700 border-red-200';
-      case 'Finished': return 'bg-yellow-100 text-yellow-700 border-yellow-200';
-      case 'Broken': return 'bg-slate-100 text-slate-700 border-slate-300';
+      case 'BOS': return 'bg-green-100 text-green-700 border-green-200';
+      case 'DOLU': return 'bg-red-100 text-red-700 border-red-200';
+      case 'BITTI': return 'bg-yellow-100 text-yellow-700 border-yellow-200';
+      case 'BOZUK': return 'bg-slate-100 text-slate-700 border-slate-300';
       default: return 'bg-gray-100 text-gray-700 border-gray-200';
     }
   };
 
-  const isFull = machine.status === 'Full';
+  const isFull = machine.status === 'DOLU';
   const remainingTime = isFull && machine.endTime 
-    ? Math.round((machine.endTime.getTime() - new Date().getTime()) / 60000)
+    ? Math.round((new Date(machine.endTime).getTime() - new Date().getTime()) / 60000)
     : 0;
+
+  const handleStart = () => {
+    if (!executeWithAuth) return;
+    const minutesStr = window.prompt("Program duration in minutes?", "45");
+    if (!minutesStr) return;
+    const durationMinutes = parseInt(minutesStr, 10);
+    const userNote = window.prompt("Any notes for the next person? (Optional)") || undefined;
+
+    executeWithAuth(async (userId) => {
+      try {
+        await startMachine(machine.id, userId, durationMinutes, userNote);
+        onActionSuccess?.();
+        onClose();
+      } catch (e: any) {
+        alert(e.message);
+      }
+    });
+  };
+
+  const handleClear = () => {
+    if (!executeWithAuth) return;
+    executeWithAuth(async () => {
+      try {
+        await clearMachine(machine.id);
+        onActionSuccess?.();
+        onClose();
+      } catch (e: any) {
+        alert(e.message);
+      }
+    });
+  };
+
+  const handleReport = () => {
+    if (!executeWithAuth) return;
+    executeWithAuth(async (userId) => {
+      try {
+        await reportMachine(machine.id, userId);
+        onActionSuccess?.();
+        onClose();
+      } catch (e: any) {
+        alert(e.message);
+      }
+    });
+  };
+
+  const handleWhatsApp = async () => {
+    try {
+      const data = await getOwnerWhatsApp(machine.id);
+      window.open(data.whatsappUrl, '_blank');
+    } catch (e: any) {
+      alert(e.message);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
@@ -36,9 +92,9 @@ const MachineModal: React.FC<MachineModalProps> = ({ machine, isOpen, onClose, o
         <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
           <div>
             <h2 className="text-xl font-bold text-slate-800">
-              {machine.type === 'Laundry' ? 'Washing Machine' : 'Dryer'} #{machine.id}
+              {machine.type === 'WASHER' ? 'Washing Machine' : 'Dryer'} #{machine.displayId || machine.id}
             </h2>
-            <p className="text-sm text-slate-500 font-medium">Floor {machine.floorNumber}</p>
+            <p className="text-sm text-slate-500 font-medium">Floor {machine.floor}</p>
           </div>
           <button 
             onClick={onClose}
@@ -70,7 +126,7 @@ const MachineModal: React.FC<MachineModalProps> = ({ machine, isOpen, onClose, o
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
                 Queue Line
               </span>
-              <span className="text-xl font-bold text-purple-700">{machine.queueCount || 0} person(s)</span>
+              <span className="text-xl font-bold text-purple-700">{machine._count?.queueEntries || 0} person(s)</span>
             </div>
           )}
 
@@ -84,13 +140,13 @@ const MachineModal: React.FC<MachineModalProps> = ({ machine, isOpen, onClose, o
 
         {/* Footer Actions */}
         <div className="p-5 bg-slate-50 border-t border-slate-100 flex flex-col gap-3">
-          {machine.status === 'Empty' && (
-            <button className="w-full bg-slate-900 hover:bg-slate-800 text-white py-3 rounded-xl text-sm font-semibold transition-colors duration-200 shadow-sm">
+          {machine.status === 'BOS' && (
+            <button onClick={handleStart} className="w-full bg-slate-900 hover:bg-slate-800 text-white py-3 rounded-xl text-sm font-semibold transition-colors duration-200 shadow-sm">
               Start Use
             </button>
           )}
           
-          {machine.status === 'Full' && (
+          {machine.status === 'DOLU' && (
             <button 
               onClick={() => onToggleQueue?.(machine.id)}
               className={`w-full py-3 rounded-xl text-sm font-semibold transition-colors duration-200 shadow-sm ${
@@ -103,20 +159,26 @@ const MachineModal: React.FC<MachineModalProps> = ({ machine, isOpen, onClose, o
             </button>
           )}
           
-          {machine.status === 'Finished' && (
-            <button className="w-full bg-slate-900 hover:bg-slate-800 text-white py-3 rounded-xl text-sm font-semibold transition-colors duration-200 shadow-sm">
-              View / Edit My Usage
-            </button>
+          {machine.status === 'BITTI' && (
+            <>
+              <button onClick={handleClear} className="w-full bg-slate-900 hover:bg-slate-800 text-white py-3 rounded-xl text-sm font-semibold transition-colors duration-200 shadow-sm">
+                I took my laundry (Clear)
+              </button>
+              <button onClick={handleWhatsApp} className="w-full bg-green-500 hover:bg-green-600 text-white py-3 rounded-xl text-sm font-semibold transition-colors duration-200 shadow-sm flex items-center justify-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                Send WhatsApp to Owner
+              </button>
+            </>
           )}
 
-          {machine.status === 'Broken' && (
+          {machine.status === 'BOZUK' && (
             <button disabled className="w-full bg-slate-200 text-slate-500 py-3 rounded-xl text-sm font-semibold cursor-not-allowed">
               Out of Order
             </button>
           )}
 
-          {machine.status !== 'Broken' && (
-            <button className="w-full py-3 bg-white hover:bg-red-50 text-red-600 border border-slate-200 hover:border-red-200 rounded-xl text-sm font-semibold transition-colors duration-200">
+          {machine.status !== 'BOZUK' && (
+            <button onClick={handleReport} className="w-full py-3 bg-white hover:bg-red-50 text-red-600 border border-slate-200 hover:border-red-200 rounded-xl text-sm font-semibold transition-colors duration-200">
               Report Issue
             </button>
           )}
