@@ -5,9 +5,10 @@ interface MachineModalProps {
   machine: Machine | null;
   isOpen: boolean;
   onClose: () => void;
+  onToggleQueue?: (machineId: string) => void;
 }
 
-const MachineModal: React.FC<MachineModalProps> = ({ machine, isOpen, onClose }) => {
+const MachineModal: React.FC<MachineModalProps> = ({ machine, isOpen, onClose, onToggleQueue }) => {
   if (!isOpen || !machine) return null;
 
   const getStatusBadge = (status: Machine['status']) => {
@@ -63,6 +64,16 @@ const MachineModal: React.FC<MachineModalProps> = ({ machine, isOpen, onClose })
             </div>
           )}
 
+          {isFull && (
+            <div className="flex justify-between items-center bg-purple-50 p-3 rounded-xl border border-purple-100">
+              <span className="text-purple-600 font-semibold flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                Queue Line
+              </span>
+              <span className="text-xl font-bold text-purple-700">{machine.queueCount || 0} person(s)</span>
+            </div>
+          )}
+
           {machine.userNote && (
             <div className="bg-blue-50/50 p-4 rounded-xl border border-blue-100">
               <p className="text-xs text-blue-600 font-semibold mb-1 uppercase tracking-wide">User Note</p>
@@ -73,11 +84,32 @@ const MachineModal: React.FC<MachineModalProps> = ({ machine, isOpen, onClose })
 
         {/* Footer Actions */}
         <div className="p-5 bg-slate-50 border-t border-slate-100 flex flex-col gap-3">
-          {machine.status !== 'Broken' ? (
+          {machine.status === 'Empty' && (
             <button className="w-full bg-slate-900 hover:bg-slate-800 text-white py-3 rounded-xl text-sm font-semibold transition-colors duration-200 shadow-sm">
-              {machine.status === 'Empty' ? 'Start Use' : 'View / Edit My Usage'}
+              Start Use
             </button>
-          ) : (
+          )}
+          
+          {machine.status === 'Full' && (
+            <button 
+              onClick={() => onToggleQueue?.(machine.id)}
+              className={`w-full py-3 rounded-xl text-sm font-semibold transition-colors duration-200 shadow-sm ${
+                machine.isCurrentUserInQueue 
+                ? 'bg-purple-100 text-purple-700 hover:bg-purple-200 border border-purple-300' 
+                : 'bg-purple-600 hover:bg-purple-700 text-white'
+              }`}
+            >
+              {machine.isCurrentUserInQueue ? 'Leave Queue' : 'Join Queue'}
+            </button>
+          )}
+          
+          {machine.status === 'Finished' && (
+            <button className="w-full bg-slate-900 hover:bg-slate-800 text-white py-3 rounded-xl text-sm font-semibold transition-colors duration-200 shadow-sm">
+              View / Edit My Usage
+            </button>
+          )}
+
+          {machine.status === 'Broken' && (
             <button disabled className="w-full bg-slate-200 text-slate-500 py-3 rounded-xl text-sm font-semibold cursor-not-allowed">
               Out of Order
             </button>

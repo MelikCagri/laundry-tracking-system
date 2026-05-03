@@ -49,6 +49,14 @@ const MachineCard: React.FC<MachineCardProps> = ({ machine, onClick }) => {
         </div>
       )}
 
+      {/* Queue Badge (Only if full and queue exists) */}
+      {isFull && (machine.queueCount || 0) > 0 && (
+        <div className="absolute -bottom-2 -right-2 bg-purple-100 text-purple-700 border border-purple-200 text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1 animate-in zoom-in">
+          <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+          {machine.queueCount}
+        </div>
+      )}
+
       {/* Note indicator */}
       {machine.userNote && (
         <div className="absolute bottom-2 w-1.5 h-1.5 rounded-full bg-current opacity-60"></div>

@@ -5,4 +5,6 @@ export interface Machine {
   floorNumber: number;
   endTime?: Date;
   userNote?: string;
+  queueCount?: number;
+  isCurrentUserInQueue?: boolean;
 }

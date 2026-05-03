@@ -5,19 +5,19 @@ import MachineModal from '../components/feature/MachineModal';
 import { Machine } from '../types';
 
 // Mock Data
-const MOCK_MACHINES: Machine[] = [
+const INITIAL_MACHINES: Machine[] = [
   // Floor 1 (5 Washing, 2 Dryer)
   { id: '101', type: 'Laundry', status: 'Empty', floorNumber: 1 },
-  { id: '102', type: 'Laundry', status: 'Full', floorNumber: 1, endTime: new Date(Date.now() + 45 * 60000), userNote: 'Biterse üstüne koyabilirsiniz.' },
+  { id: '102', type: 'Laundry', status: 'Full', floorNumber: 1, endTime: new Date(Date.now() + 45 * 60000), userNote: 'Biterse üstüne koyabilirsiniz.', queueCount: 2, isCurrentUserInQueue: false },
   { id: '103', type: 'Laundry', status: 'Broken', floorNumber: 1, userNote: 'Water leaking' },
   { id: '104', type: 'Laundry', status: 'Empty', floorNumber: 1 },
   { id: '105', type: 'Laundry', status: 'Finished', floorNumber: 1, endTime: new Date(Date.now() - 10 * 60000) },
-  { id: '106', type: 'Dryer', status: 'Full', floorNumber: 1, endTime: new Date(Date.now() + 20 * 60000) },
+  { id: '106', type: 'Dryer', status: 'Full', floorNumber: 1, endTime: new Date(Date.now() + 20 * 60000), queueCount: 0, isCurrentUserInQueue: false },
   { id: '107', type: 'Dryer', status: 'Empty', floorNumber: 1 },
   // Floor 2 (5 Washing, 3 Dryer)
   { id: '201', type: 'Laundry', status: 'Empty', floorNumber: 2 },
   { id: '202', type: 'Laundry', status: 'Empty', floorNumber: 2 },
-  { id: '203', type: 'Laundry', status: 'Full', floorNumber: 2, endTime: new Date(Date.now() + 15 * 60000) },
+  { id: '203', type: 'Laundry', status: 'Full', floorNumber: 2, endTime: new Date(Date.now() + 15 * 60000), queueCount: 1, isCurrentUserInQueue: true },
   { id: '204', type: 'Laundry', status: 'Finished', floorNumber: 2, endTime: new Date(Date.now() - 5 * 60000), userNote: 'Lütfen çamaşırları sepete alın.' },
   { id: '205', type: 'Laundry', status: 'Broken', floorNumber: 2 },
   { id: '206', type: 'Dryer', status: 'Empty', floorNumber: 2 },
@@ -26,13 +26,40 @@ const MOCK_MACHINES: Machine[] = [
 ];
 
 const Dashboard: React.FC = () => {
+  const [machines, setMachines] = useState<Machine[]>(INITIAL_MACHINES);
   const [selectedFloor, setSelectedFloor] = useState<number | 'All'>('All');
   const [selectedMachine, setSelectedMachine] = useState<Machine | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
-  const filteredMachines = MOCK_MACHINES.filter(
+  const filteredMachines = machines.filter(
     (m) => selectedFloor === 'All' || m.floorNumber === selectedFloor
   );
+
+  const toggleQueue = (machineId: string) => {
+    setMachines(prev => prev.map(m => {
+      if (m.id === machineId) {
+        const inQueue = m.isCurrentUserInQueue;
+        return {
+          ...m,
+          isCurrentUserInQueue: !inQueue,
+          queueCount: Math.max(0, (m.queueCount || 0) + (inQueue ? -1 : 1))
+        };
+      }
+      return m;
+    }));
+    
+    if (selectedMachine?.id === machineId) {
+      const m = machines.find(mac => mac.id === machineId);
+      if (m) {
+        const inQueue = m.isCurrentUserInQueue;
+        setSelectedMachine({
+          ...m,
+          isCurrentUserInQueue: !inQueue,
+          queueCount: Math.max(0, (m.queueCount || 0) + (inQueue ? -1 : 1))
+        });
+      }
+    }
+  };
 
   // Group by type for better visualization
   const washingMachines = filteredMachines.filter(m => m.type === 'Laundry');
@@ -101,7 +128,7 @@ const Dashboard: React.FC = () => {
               ) : (
                 <div className="flex flex-col">
                   {washingMachines.map((machine) => (
-                    <MachineListRow key={machine.id} machine={machine} />
+                    <MachineListRow key={machine.id} machine={machine} onToggleQueue={() => toggleQueue(machine.id)} />
                   ))}
                 </div>
               )}
@@ -123,7 +150,7 @@ const Dashboard: React.FC = () => {
               ) : (
                 <div className="flex flex-col">
                   {dryers.map((machine) => (
-                    <MachineListRow key={machine.id} machine={machine} />
+                    <MachineListRow key={machine.id} machine={machine} onToggleQueue={() => toggleQueue(machine.id)} />
                   ))}
                 </div>
               )}
@@ -136,6 +163,7 @@ const Dashboard: React.FC = () => {
         machine={selectedMachine} 
         isOpen={!!selectedMachine} 
         onClose={() => setSelectedMachine(null)} 
+        onToggleQueue={toggleQueue}
       />
     </div>
   );

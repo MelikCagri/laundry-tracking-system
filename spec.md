@@ -17,6 +17,7 @@ KYK yurtlarında yetersiz çamaşır ve kurutma makinesi sayısından kaynaklana
 - **Kullanım Bitirme:** Kullanıcı olarak, çamaşırlarımı aldığımda makinenin durumunu "Boş" olarak güncelleyebilmek istiyorum.
 - **Süre Uzatma:** Kullanıcı olarak, kurutma makinesindeki çamaşırım kurumadıysa, sistem üzerinden süreyi uzatabilmek istiyorum.
 - **Hata Raporlama:** Kullanıcı olarak, sistemde "Boş" görünen ama fiziksel olarak yanına gittiğimde dolu olan bir makineyi "Dolu/Hatalı" olarak raporlayabilmek istiyorum.
+- **Sıraya Girme (Kuyruk):** Kullanıcı olarak, dolu olan bir makine için sıraya girebilmek, sırada kaç kişi olduğunu görebilmek ve gerektiğinde sıradan çıkabilmek istiyorum.
 
 ## 4. Veritabanı Modelleri (PostgreSQL Modeli)
 
@@ -47,3 +48,12 @@ Kim, ne zaman, hangi makineyi kullandı? Veya kim sahte "boş" makineyi raporlad
 - `makine_id`: (Makineler tablosuna bağlantı)
 - `islem_tipi`: (Metin - "Kullanım Başladı", "Uzatma Yapıldı", "Hata Raporlandı")
 - `olusturulma_tarihi`: (Zaman damgası)
+
+### 4. Kuyruk (Queue) Tablosu
+Makineler için oluşturulan sıraları takip etmek amacıyla kullanılacak tablo.
+
+- `id`: (Benzersiz kimlik)
+- `makine_id`: (Makineler tablosuna bağlantı)
+- `kullanici_id`: (Kullanıcılar tablosuna bağlantı)
+- `katilma_zamani`: (Tarih/Saat - Sıraya ne zaman girildi)
+- `durum`: (Metin - "Bekliyor", "Tamamlandı", "İptal Edildi")
