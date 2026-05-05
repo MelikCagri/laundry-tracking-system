@@ -50,6 +50,7 @@ enum ActionType {
   START
   EXTEND
   REPORT_BROKEN
+  REPORT_FULL
   FINISH
 }
 

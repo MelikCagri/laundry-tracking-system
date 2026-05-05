@@ -57,6 +57,12 @@ export const finishMachine = async (machineId: string) => {
 
 // Clear a machine back to BOS (owner picked up laundry)
 export const clearMachine = async (machineId: string) => {
+  // Makine sıfırlandığında REPORT_FULL loglarını temizle (sayaç sıfırlansın)
+  // REPORT_BROKEN logları temizlenmez: Bozukluk kaydı geçmişte kalmalı
+  await prisma.log.deleteMany({
+    where: { machineId, actionType: 'REPORT_FULL' },
+  });
+
   return prisma.machine.update({
     where: { id: machineId },
     data: {
@@ -90,29 +96,49 @@ export const extendMachine = async (
   });
 };
 
-// Report a machine (10+ reports → BOZUK)
-export const reportMachine = async (machineId: string, userId: string) => {
+// Report a machine (FULL: 3+ reports → DOLU | BROKEN: 10+ reports → BOZUK)
+export const reportMachine = async (
+  machineId: string,
+  userId: string,
+  issueType: 'FULL' | 'BROKEN'
+) => {
   const machine = await prisma.machine.findUnique({ where: { id: machineId } });
   if (!machine) throw new Error('Machine not found');
 
+  const actionType = issueType === 'FULL' ? 'REPORT_FULL' : 'REPORT_BROKEN';
+
+  // Anti-spam: Aynı kullanıcı bu makineye aynı tipte daha önce rapor atmış mı?
+  const existingReport = await prisma.log.findFirst({
+    where: { machineId, userId, actionType },
+  });
+  if (existingReport) throw new Error(`You have already reported this machine as ${issueType}`);
+
   await prisma.log.create({
-    data: { userId, machineId, actionType: 'REPORT_BROKEN' },
+    data: { userId, machineId, actionType },
   });
 
-  // Count total REPORT_BROKEN logs for this machine
+  // Count unique user reports for this machine and issue type
   const reportCount = await prisma.log.count({
-    where: { machineId, actionType: 'REPORT_BROKEN' },
+    where: { machineId, actionType },
   });
 
-  if (reportCount >= 10) {
+  if (issueType === 'FULL' && reportCount >= 3 && machine.status === MachineStatus.BOS) {
+    await prisma.machine.update({
+      where: { id: machineId },
+      data: { status: MachineStatus.DOLU },
+    });
+    return { reported: true, autoUpdated: true, newStatus: 'DOLU', reportCount };
+  }
+
+  if (issueType === 'BROKEN' && reportCount >= 10) {
     await prisma.machine.update({
       where: { id: machineId },
       data: { status: MachineStatus.BOZUK },
     });
-    return { reported: true, broken: true, reportCount };
+    return { reported: true, autoUpdated: true, newStatus: 'BOZUK', reportCount };
   }
 
-  return { reported: true, broken: false, reportCount };
+  return { reported: true, autoUpdated: false, reportCount };
 };
 
 // Get owner's WhatsApp link for a finished machine
@@ -132,4 +158,84 @@ export const getOwnerWhatsApp = async (machineId: string) => {
   const waLink = `https://wa.me/${waNumber}`;
 
   return { whatsappLink: waLink };
+};
+
+// ─────────────────────────────────────────────
+// ADMIN-ONLY FUNCTIONS
+// ─────────────────────────────────────────────
+
+const GHOST_ADMIN_PHONE = '0000000000';
+
+// Ghost Admin ID'sini veritabanından çek
+const getGhostAdminId = async (): Promise<string> => {
+  const admin = await prisma.user.findUnique({ where: { phone: GHOST_ADMIN_PHONE } });
+  if (!admin) throw new Error('Ghost Admin not found in DB. Please run the seed script.');
+  return admin.id;
+};
+
+// [ADMIN] Yeni makine ekle
+export const createMachine = async (floor: number, type: 'WASHER' | 'DRYER') => {
+  return prisma.machine.create({
+    data: { floor, type },
+  });
+};
+
+// [ADMIN] Makine sil
+export const deleteMachine = async (machineId: string) => {
+  // İlişkili log ve kuyruk kayıtlarını sil
+  await prisma.log.deleteMany({ where: { machineId } });
+  await prisma.queue.deleteMany({ where: { machineId } });
+  return prisma.machine.delete({ where: { id: machineId } });
+};
+
+// [ADMIN] Makineyi zorla sıfırla (Force Reset)
+export const forceResetMachine = async (machineId: string) => {
+  const adminId = await getGhostAdminId();
+
+  await prisma.log.deleteMany({ where: { machineId, actionType: 'REPORT_FULL' } });
+
+  const updated = await prisma.machine.update({
+    where: { id: machineId },
+    data: {
+      status: MachineStatus.BOS,
+      activeUserId: null,
+      endTime: null,
+      durationMinutes: null,
+      userNote: null,
+    },
+  });
+
+  await prisma.log.create({
+    data: { userId: adminId, machineId, actionType: 'FINISH' },
+  });
+
+  return updated;
+};
+
+// [ADMIN] Makine durumunu manuel olarak değiştir
+export const setMachineStatus = async (machineId: string, status: MachineStatus) => {
+  const adminId = await getGhostAdminId();
+
+  const updated = await prisma.machine.update({
+    where: { id: machineId },
+    data: { status },
+  });
+
+  await prisma.log.create({
+    data: { userId: adminId, machineId, actionType: 'FINISH' },
+  });
+
+  return updated;
+};
+
+// [ADMIN] Tüm logları getir
+export const getAllLogs = async () => {
+  return prisma.log.findMany({
+    orderBy: { createdAt: 'desc' },
+    include: {
+      user: { select: { phone: true } },
+      machine: { select: { floor: true, type: true } },
+    },
+    take: 200, // Son 200 log
+  });
 };

@@ -38,6 +38,12 @@ Before writing a script, check `execution/` per your directive. Only create new 
 **3. Update directives as you learn**
 Directives are living documents. When you discover API constraints, better approaches, common errors, or timing expectations—update the directive. But don't create or overwrite directives without asking unless explicitly told to. Directives are your instruction set and must be preserved (and improved upon over time, not extemporaneously used and then discarded).
 
+**4. Model Recommendation**
+Before proceeding with any implementation, research, or significant change, analyze the task's complexity and inform the user:
+- If the task requires deep reasoning, complex architectural decisions, or advanced debugging, recommend using the **Pro model**.
+- If the task is routine, involves minor UI updates, or simple script writing, state that it can be handled by the **Flash model**.
+Always provide this recommendation at the beginning of your response before taking action.
+
 ## Self-annealing loop
 
 Errors are learning opportunities. When something breaks:

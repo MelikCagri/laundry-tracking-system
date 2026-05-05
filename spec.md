@@ -5,55 +5,67 @@ KYK yurtlarında yetersiz çamaşır ve kurutma makinesi sayısından kaynaklana
 
 ## 2. Teknoloji Yığını (Tech Stack)
 
-- **Frontend (Arayüz):** React (Vite), TypeScript (.tsx), CSS için Tailwind CSS (Hızlı ve modern tasarım).
-- **Backend (Sunucu):** Node.js ve Express.js (RESTful API mimarisi).
-- **Bildirim Sistemi:** Web Push API (Tarayıcı üzerinden ücretsiz bildirimler) veya Node.js "node-cron" kütüphanesi ile zamanlanmış görevler (Örn: Çamaşır bitince tetiklenen e-posta/bildirim).
-- **Hosting (Ücretsiz Canlıya Alma):** Frontend için Vercel, Backend için Render veya Railway.
+- **Frontend (Arayüz):** React (Vite), TypeScript (.tsx), CSS için Tailwind CSS.
+- **Backend (Sunucu):** Node.js ve Express.js (RESTful API mimarisi), Prisma (ORM).
+- **Veritabanı:** PostgreSQL.
+- **Bildirim Sistemi:** Web Push API veya zamanlanmış görevler (Planlanıyor).
 
 ## 3. Kullanıcı Senaryoları (User Stories)
 
-- **Görüntüleme:** Kullanıcı olarak, sisteme girdiğimde katları ve o kattaki çamaşır/kurutma makinelerinin anlık durumlarını (Boş, Dolu, Bitti) renk kodlarıyla görebilmek istiyorum.
-- **Kullanım Başlatma:** Kullanıcı olarak, çamaşır atacağım makineyi seçip, ne kadar süreceğini belirterek durumu "Dolu" yapabilmek ve arkamdan gelenler için "Biterse üstüne koyabilirsiniz" gibi bir not bırakabilmek istiyorum.
-- **Kullanım Bitirme:** Kullanıcı olarak, çamaşırlarımı aldığımda makinenin durumunu "Boş" olarak güncelleyebilmek istiyorum.
-- **Süre Uzatma:** Kullanıcı olarak, kurutma makinesindeki çamaşırım kurumadıysa, sistem üzerinden süreyi uzatabilmek istiyorum.
-- **Hata Raporlama:** Kullanıcı olarak, sistemde "Boş" görünen ama fiziksel olarak yanına gittiğimde dolu olan bir makineyi "Dolu/Hatalı" olarak raporlayabilmek istiyorum.
-- **Sıraya Girme (Kuyruk):** Kullanıcı olarak, dolu olan bir makine için sıraya girebilmek, sırada kaç kişi olduğunu görebilmek ve gerektiğinde sıradan çıkabilmek istiyorum.
+- **Görüntüleme:** Kullanıcı olarak, sisteme girdiğimde katları ve o kattaki çamaşır/kurutma makinelerinin anlık durumlarını (Boş, Dolu, Bitti, Arızalı) görebilmek istiyorum.
+- **Kullanım Başlatma:** Kullanıcı olarak, makineyi seçip süre belirterek durumu "Dolu" yapabilmek ve not bırakabilmek istiyorum.
+- **Kullanım Bitirme:** Kullanıcı olarak, çamaşırlarımı aldığımda makineyi "Boş" yapabilmek istiyorum.
+- **Süre Uzatma:** Kullanıcı olarak, ihtiyaç halinde sistem üzerinden süreyi uzatabilmek istiyorum.
+- **Hata Raporlama:** Kullanıcı olarak, fiziksel durumu sistemdekiyle uyuşmayan veya arızalı makineleri raporlayabilmek istiyorum.
+- **Sıraya Girme (Kuyruk):** Kullanıcı olarak, dolu olan bir makine için sıraya girebilmek ve sırayı takip edebilmek istiyorum.
 
-## 4. Veritabanı Modelleri (PostgreSQL Modeli)
+## 4. Veritabanı Modelleri (Prisma / PostgreSQL)
 
-### 1. Kullanıcılar (Users) Tablosu
-Sisteme giren öğrencilerin bilgilerini tutacağız.
+### 1. Kullanıcılar (User) Tablosu
+Sisteme giren öğrencilerin temel kimlik bilgilerini tutar.
 
-- `id`: (Benzersiz kimlik)
-- `ad_soyad`: (Metin)
-- `oda_numarasi`: (Metin/Sayı)
-- `telefon` veya `telegram_id`: (Bildirim göndermek için)
+- `id`: String (UUID, PK)
+- `phone`: String (Unique - Kimlik tespiti için kullanılır)
+- `createdAt`: DateTime
 
-### 2. Makineler (Machines) Tablosu
-Yurttaki tüm cihazların sabit listesi ve anlık durumları.
+### 2. Makineler (Machine) Tablosu
+Cihazların sabit bilgileri ve anlık durumları.
 
-- `id`: (Benzersiz kimlik)
-- `kat_numarasi`: (Sayı - Hangi katta olduğu)
-- `tip`: (Metin - "Çamaşır" veya "Kurutma")
-- `durum`: (Metin - "Boş", "Dolu", "Bitti")
-- `aktif_kullanici_id`: (Kullanıcılar tablosuna bağlantı - Şu an kim kullanıyor?)
-- `bitis_zamani`: (Tarih/Saat - Sayacın ne zaman sıfırlanacağı)
-- `kullanici_notu`: (Metin - Örn: "Biterse üstüne koyabilirsiniz")
+- `id`: String (UUID, PK)
+- `floor`: Int (Katta bulunduğu yer)
+- `type`: Enum (WASHER, DRYER)
+- `status`: Enum (BOS, DOLU, BITTI, BOZUK)
+- `activeUserId`: String (FK - Şu an kullanan kullanıcı)
+- `endTime`: DateTime (İşlemin biteceği zaman)
+- `durationMinutes`: Int (Toplam işlem süresi)
+- `userNote`: String (Kullanıcı notu)
 
-### 3. İşlem Geçmişi ve Raporlar (Logs / Reports) Tablosu
-Kim, ne zaman, hangi makineyi kullandı? Veya kim sahte "boş" makineyi raporladı? Bu tablo sistemi kötüye kullananları (gamification/ceza) tespit etmek için çok işimize yarayacak.
+### 3. İşlem Geçmişi (Log) Tablosu
+Sistem üzerindeki tüm aksiyonların kaydı.
 
-- `id`: (Benzersiz kimlik)
-- `kullanici_id`: (Kullanıcılar tablosuna bağlantı)
-- `makine_id`: (Makineler tablosuna bağlantı)
-- `islem_tipi`: (Metin - "Kullanım Başladı", "Uzatma Yapıldı", "Hata Raporlandı")
-- `olusturulma_tarihi`: (Zaman damgası)
+- `id`: String (UUID, PK)
+- `userId`: String (FK)
+- `machineId`: String (FK)
+- `actionType`: Enum (START, EXTEND, REPORT_BROKEN, FINISH)
+- `createdAt`: DateTime
 
 ### 4. Kuyruk (Queue) Tablosu
-Makineler için oluşturulan sıraları takip etmek amacıyla kullanılacak tablo.
+Makineler için oluşturulan sıralar.
 
-- `id`: (Benzersiz kimlik)
-- `makine_id`: (Makineler tablosuna bağlantı)
-- `kullanici_id`: (Kullanıcılar tablosuna bağlantı)
-- `katilma_zamani`: (Tarih/Saat - Sıraya ne zaman girildi)
-- `durum`: (Metin - "Bekliyor", "Tamamlandı", "İptal Edildi")
+- `id`: String (UUID, PK)
+- `machineId`: String (FK)
+- `userId`: String (FK)
+- `joinedAt`: DateTime
+- `status`: Enum (WAITING, COMPLETED, CANCELLED, SKIPPED)
+
+## 5. Güncel Durum ve Yapılacaklar (Reminders / Notes)
+
+1. **Veritabanı ve Bağlantılar:** Frontend, Backend ve Database bağlantısı şu an sadece "Floor 1"deki 8 makine için yapıldı. A Blok "Floor 2" kısmı henüz duruyor. Veritabanı ve sistem limitleri kontrol edilip ne kadar makine eklenebileceğine bakılacak.
+2. **Test Edilmesi Gereken Senaryolar:** Şu an yalnızca makine yüklenirken kullanıcı numarası isteniyor ve sisteme kaydediliyor, başka işlemlerde numara sorulmuyor. "Sıraya girme, makine doldurma ve sıradan çıkma" temel olarak test edildi ancak aşağıdaki gibi detaylı testlerin "Antigravity" kullanılarak yaptırılıp raporlanması gerekiyor:
+   - Aynı kullanıcı makineyi doldurup geri boşaltabiliyor mu?
+   - Bir kullanıcı aynı anda başka bir makineyi de doldurabiliyor mu?
+   - Makine süresi bittiğinde "mesaj at" butonu düzgün çıkıyor mu?
+3. **Bildirim ve Mobil Kullanım:** Bildirim gönderme özelliği henüz eklenmedi. Ayrıca sistemin telefonda (mobil görünümde) kullanımı henüz test edilmedi.
+4. **Veritabanı Scripti ve Dokümantasyon Güncellemesi:** Veritabanını (database) doldurma scripti şu an geçici olarak `backend` klasörü içine yazıldı. Daha iyi bir yapı olması adına bunu `execution` klasörüne (katmanına) taşımaya bakılacak. Ayrıca mevcut durumda `spec.md` de yazılanlardan farklı bazı değişiklikler yapıldı. Yeni çalışmalara başlamadan önce `spec.md`'nin güncel duruma uygun olarak tamamen güncellenmesi gerekiyor.
+
+5. **Sistemde Admin , user rolleri tanımlanmadı:**  Sistemde admin , user rolleri tanımlanmadı. Bu roller frontend ve backend için tanımlanmalı ve gerekli yerlere yetkiler verilmelidir.  Özellikle makine ekleme , silme , güncelleme yetkisi admin kullanıcılarda olmalı. Student kullanıcıları sadece makine kullanma yetkisine sahip olmalı.

@@ -59,10 +59,12 @@ export const extend = async (req: Request, res: Response) => {
 
 export const report = async (req: Request, res: Response) => {
   try {
-    const { userId } = req.body;
+    const { userId, issueType } = req.body;
     if (!userId) return res.status(400).json({ error: 'userId is required' });
+    if (!issueType || !['FULL', 'BROKEN'].includes(issueType))
+      return res.status(400).json({ error: 'issueType must be FULL or BROKEN' });
 
-    const result = await machineService.reportMachine(getId(req), userId);
+    const result = await machineService.reportMachine(getId(req), userId, issueType);
     res.json(result);
   } catch (e: any) {
     res.status(400).json({ error: e.message });

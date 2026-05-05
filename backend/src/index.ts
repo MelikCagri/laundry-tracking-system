@@ -5,7 +5,7 @@ import cors from 'cors';
 import machineRoutes from './routes/machineRoutes';
 import userRoutes from './routes/userRoutes';
 import queueRoutes from './routes/queueRoutes';
-
+import adminRoutes from './routes/adminRoutes';
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -21,6 +21,7 @@ app.get('/api/health', (req: Request, res: Response) => {
 app.use('/api/machines', machineRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/machines/:id/queue', queueRoutes);
+app.use('/api/admin', adminRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);

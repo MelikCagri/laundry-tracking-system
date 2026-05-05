@@ -2,11 +2,17 @@ import prisma from '../lib/prisma';
 
 // Join queue for a machine
 export const joinQueue = async (machineId: string, userId: string) => {
-  // Check if already in queue
-  const existing = await prisma.queue.findFirst({
+  // Anti-spam #1: Aynı makine için zaten sırada mı?
+  const existingForMachine = await prisma.queue.findFirst({
     where: { machineId, userId, status: 'WAITING' },
   });
-  if (existing) throw new Error('Already in queue for this machine');
+  if (existingForMachine) throw new Error('Already in queue for this machine');
+
+  // Anti-spam #2: Herhangi bir başka makinenin sırasında mı?
+  const existingAnywhere = await prisma.queue.findFirst({
+    where: { userId, status: 'WAITING' },
+  });
+  if (existingAnywhere) throw new Error('Already in queue for another machine. Please leave that queue first');
 
   return prisma.queue.create({
     data: { machineId, userId },
