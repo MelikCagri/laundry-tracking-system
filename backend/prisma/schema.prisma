@@ -30,8 +30,14 @@ enum MachineType {
   DRYER
 }
 
+enum Block {
+  A
+  B
+}
+
 model Machine {
   id              String        @id @default(uuid())
+  block           Block
   floor           Int
   type            MachineType
   status          MachineStatus @default(BOS)

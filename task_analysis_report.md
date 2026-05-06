@@ -14,10 +14,10 @@ Projenin temel iskeleti (Floor 1, 8 makine) kurulmuş durumda ancak sistemin öl
 1.  **Dökümantasyon Güncellemesi (`spec.md`): [tamamlandı]**
     *   **Neden:** Mevcut kod ile döküman arasında farklılıklar var. Yanlış döküman yanlış geliştirmeye yol açar.
     *   **Eylem:** Tüm `spec.md` dosyasını mevcut backend ve frontend yapısına göre güncellemek.
-2.  **Admin ve Öğrenci Rollerinin Tanımlanması:**
+2.  **Admin ve Öğrenci Rollerinin Tanımlanması: [tamamlandı]**
     *   **Neden:** Güvenlik ve yetki kontrolü eksik. Öğrencilerin makine silme/ekleme yetkisi olmamalı.
     *   **Eylem:** Backend'de JWT veya benzeri bir yöntemle rol kontrolü (RBAC) eklemek, Frontend'de admin paneli taslağı oluşturmak.
-3.  **Veritabanı Genişletme (Floor 2 ve A Blok):**
+3.  **Veritabanı Genişletme (Floor 2 ve A Blok): [tamamlandı]**
     *   **Neden:** Sistem şu an çok kısıtlı bir kapsamda.
     *   **Eylem:** Diğer katların ve blokların makinelerini veritabanına eklemek ve sistem limitlerini test etmek.
 

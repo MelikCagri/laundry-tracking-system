@@ -4,7 +4,7 @@ import { MachineStatus } from '@prisma/client';
 // Get all machines
 export const getAllMachines = async () => {
   return prisma.machine.findMany({
-    orderBy: [{ floor: 'asc' }, { type: 'desc' }],
+    orderBy: [{ block: 'asc' }, { floor: 'asc' }, { type: 'desc' }],
     include: {
       _count: { select: { queueEntries: { where: { status: 'WAITING' } } } },
     },
@@ -174,9 +174,9 @@ const getGhostAdminId = async (): Promise<string> => {
 };
 
 // [ADMIN] Yeni makine ekle
-export const createMachine = async (floor: number, type: 'WASHER' | 'DRYER') => {
+export const createMachine = async (floor: number, type: 'WASHER' | 'DRYER', block: 'A' | 'B') => {
   return prisma.machine.create({
-    data: { floor, type },
+    data: { floor, type, block },
   });
 };
 
@@ -234,7 +234,7 @@ export const getAllLogs = async () => {
     orderBy: { createdAt: 'desc' },
     include: {
       user: { select: { phone: true } },
-      machine: { select: { floor: true, type: true } },
+      machine: { select: { block: true, floor: true, type: true } },
     },
     take: 200, // Son 200 log
   });

@@ -51,16 +51,20 @@ export const login = (req: Request, res: Response): void => {
 // [ADMIN] Yeni makine oluştur
 export const createMachine = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { floor, type } = req.body;
-    if (!floor || !type) {
-      res.status(400).json({ error: 'floor and type are required' });
+    const { floor, type, block } = req.body;
+    if (!floor || !type || !block) {
+      res.status(400).json({ error: 'floor, type and block are required' });
       return;
     }
     if (!['WASHER', 'DRYER'].includes(type)) {
       res.status(400).json({ error: 'type must be WASHER or DRYER' });
       return;
     }
-    const machine = await machineService.createMachine(Number(floor), type);
+    if (!['A', 'B'].includes(block)) {
+      res.status(400).json({ error: 'block must be A or B' });
+      return;
+    }
+    const machine = await machineService.createMachine(Number(floor), type, block);
     res.status(201).json(machine);
   } catch (e: any) {
     res.status(400).json({ error: e.message });

@@ -2,12 +2,19 @@ const API_URL = 'http://localhost:5000/api';
 
 // Helper to handle fetch responses
 const fetcher = async (url: string, options?: RequestInit) => {
+  const adminToken = localStorage.getItem('adminToken');
+  const headers: any = {
+    'Content-Type': 'application/json',
+    ...options?.headers,
+  };
+  
+  if (adminToken) {
+    headers['Authorization'] = `Bearer ${adminToken}`;
+  }
+
   const response = await fetch(`${API_URL}${url}`, {
     ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options?.headers,
-    },
+    headers,
   });
 
   if (!response.ok) {
@@ -61,10 +68,10 @@ export const extendMachine = async (id: string, extraMinutes: number) => {
   });
 };
 
-export const reportMachine = async (id: string, userId: string) => {
+export const reportMachine = async (id: string, userId: string, issueType: 'FULL' | 'BROKEN') => {
   return fetcher(`/machines/${id}/report`, {
     method: 'POST',
-    body: JSON.stringify({ userId }),
+    body: JSON.stringify({ userId, issueType }),
   });
 };
 
@@ -89,4 +96,31 @@ export const leaveQueue = async (id: string, userId: string) => {
 
 export const getQueueInfo = async (id: string) => {
   return fetcher(`/machines/${id}/queue`);
+};
+
+// --- Admin ---
+export const createMachine = async (floor: number, type: 'WASHER' | 'DRYER', block: 'A' | 'B') => {
+  return fetcher('/admin/machines', {
+    method: 'POST',
+    body: JSON.stringify({ floor, type, block }),
+  });
+};
+
+export const deleteMachine = async (id: string) => {
+  return fetcher(`/admin/machines/${id}`, {
+    method: 'DELETE',
+  });
+};
+
+export const forceResetMachine = async (id: string) => {
+  return fetcher(`/admin/machines/${id}/force-reset`, {
+    method: 'POST',
+  });
+};
+
+export const setMachineStatus = async (id: string, status: 'BOS' | 'DOLU' | 'BITTI' | 'BOZUK') => {
+  return fetcher(`/admin/machines/${id}/status`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status }),
+  });
 };

@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import toast from 'react-hot-toast';
+import { Loader2 } from 'lucide-react';
 import MachineCard from '../components/feature/MachineCard';
 import MachineListRow from '../components/feature/MachineListRow';
 import MachineModal from '../components/feature/MachineModal';
@@ -8,9 +10,14 @@ import { Machine } from '../types';
 import { getAllMachines, joinQueue, leaveQueue, getUserQueues } from '../services/api';
 import { getSavedUser } from '../services/auth';
 
+const BLOCKS = ['A', 'B'] as const;
+type BlockType = typeof BLOCKS[number];
+
 const Dashboard: React.FC = () => {
   const [machines, setMachines] = useState<Machine[]>([]);
-  const [selectedFloor, setSelectedFloor] = useState<number | 'All'>('All');
+  const [isLoading, setIsLoading] = useState(true);
+  const [selectedBlock, setSelectedBlock] = useState<BlockType>('A');
+  const [selectedFloor, setSelectedFloor] = useState<number>(1);
   const [selectedMachine, setSelectedMachine] = useState<Machine | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
@@ -22,30 +29,33 @@ const Dashboard: React.FC = () => {
   }, []);
 
   const fetchMachines = async () => {
+    setIsLoading(true);
     try {
       const data = await getAllMachines();
       const user = getSavedUser();
       let userQueues: string[] = [];
-      
+
       if (user) {
         const queues = await getUserQueues(user.id);
         userQueues = queues.map((q: any) => q.machineId);
       }
 
-      // Add a simple sequential number for display and check queue status
       const withDisplayIds = data.map((m: any, index: number) => ({
         ...m,
         displayId: (index + 1).toString(),
-        isCurrentUserInQueue: userQueues.includes(m.id)
+        isCurrentUserInQueue: userQueues.includes(m.id),
       }));
       setMachines(withDisplayIds);
     } catch (error) {
-      console.error("Failed to fetch machines:", error);
+      console.error('Failed to fetch machines:', error);
+      toast.error('Makineler yüklenirken hata oluştu.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const filteredMachines = machines.filter(
-    (m) => selectedFloor === 'All' || m.floor === selectedFloor
+    (m) => m.block === selectedBlock && m.floor === selectedFloor
   );
 
   const executeWithAuth = (action: (userId: string) => void) => {
@@ -69,60 +79,43 @@ const Dashboard: React.FC = () => {
   const toggleQueue = (machineId: string) => {
     executeWithAuth(async (userId) => {
       try {
-        const m = machines.find(mac => mac.id === machineId);
+        const m = machines.find((mac) => mac.id === machineId);
         if (!m) return;
 
         if (m.isCurrentUserInQueue) {
           await leaveQueue(machineId, userId);
+          toast.success('Sıradan ayrıldınız.');
         } else {
           await joinQueue(machineId, userId);
+          toast.success('Sıraya katıldınız!');
         }
-        await fetchMachines(); // Refresh data
-        
-        // Update selected machine if modal is open
+        await fetchMachines();
+
         if (selectedMachine?.id === machineId) {
           const updatedMachines = await getAllMachines();
           const updatedM = updatedMachines.find((mac: Machine) => mac.id === machineId);
           if (updatedM) setSelectedMachine(updatedM);
         }
-      } catch (error) {
-        console.error("Failed to toggle queue:", error);
-        alert("Failed to update queue.");
+      } catch (error: any) {
+        toast.error(error.message || 'Failed to update queue.');
       }
     });
   };
 
-  // Group by type for better visualization
-  const washingMachines = filteredMachines.filter(m => m.type === 'WASHER');
-  const dryers = filteredMachines.filter(m => m.type === 'DRYER');
+  const washingMachines = filteredMachines.filter((m) => m.type === 'WASHER');
+  const dryers = filteredMachines.filter((m) => m.type === 'DRYER');
 
   return (
     <div className="min-h-screen bg-slate-50 p-6 md:p-12">
       <div className="max-w-4xl mx-auto">
-        <header className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+        {/* Header */}
+        <header className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
             <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight mb-2">KYK Laundry</h1>
-            <p className="text-slate-500 text-lg">Real-time availability and tracking</p>
+            <p className="text-slate-500 text-lg">Gerçek zamanlı makine durumu</p>
           </div>
-          
-          <div className="flex bg-white rounded-xl p-1 shadow-sm border border-slate-200 w-full md:w-auto">
-            {['All', 1, 2].map((floor) => (
-              <button
-                key={floor}
-                onClick={() => setSelectedFloor(floor as number | 'All')}
-                className={`flex-1 md:flex-none px-6 py-2 rounded-lg text-sm font-bold transition-all duration-200 ${
-                  selectedFloor === floor
-                    ? 'bg-slate-900 text-white shadow-md'
-                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-                }`}
-              >
-                {floor === 'All' ? 'All Floors' : `Floor ${floor}`}
-              </button>
-            ))}
-          </div>
-        </header>
 
-        <div className="mb-6 flex justify-end">
+          {/* View mode toggle */}
           <div className="flex bg-white rounded-lg p-1 shadow-sm border border-slate-200">
             <button
               onClick={() => setViewMode('grid')}
@@ -138,85 +131,157 @@ const Dashboard: React.FC = () => {
                 viewMode === 'list' ? 'bg-slate-100 text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
               }`}
             >
-              List
+              Liste
             </button>
           </div>
+        </header>
+
+        {/* Block Selector */}
+        <div className="mb-3 flex gap-2">
+          {BLOCKS.map((block) => (
+            <button
+              key={block}
+              id={`block-tab-${block}`}
+              onClick={() => {
+                setSelectedBlock(block);
+                setSelectedFloor(1);
+              }}
+              className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 border ${
+                selectedBlock === block
+                  ? 'bg-slate-900 text-white border-slate-900 shadow-md'
+                  : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100 hover:text-slate-900'
+              }`}
+            >
+              {block} Blok
+            </button>
+          ))}
         </div>
 
-        <main className="space-y-12">
-          {washingMachines.length > 0 && (
-            <section>
-              <h2 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
-                <span className="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center">W</span>
-                Washing Machines
-              </h2>
-              {viewMode === 'grid' ? (
-                <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-4">
-                  {washingMachines.map((machine) => (
-                    <MachineCard key={machine.id} machine={machine} onClick={setSelectedMachine} />
-                  ))}
-                </div>
-              ) : (
-                <div className="flex flex-col">
-                  {washingMachines.map((machine) => (
-                    <MachineListRow 
-                      key={machine.id} 
-                      machine={machine} 
-                      onToggleQueue={() => toggleQueue(machine.id)} 
-                      executeWithAuth={executeWithAuth}
-                      onActionSuccess={fetchMachines}
-                    />
-                  ))}
-                </div>
-              )}
-            </section>
-          )}
+        {/* Floor Selector */}
+        <div className="mb-8 flex gap-2">
+          {[1, 2].map((floor) => (
+            <button
+              key={floor}
+              id={`floor-tab-${floor}`}
+              onClick={() => setSelectedFloor(floor)}
+              className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all duration-200 border ${
+                selectedFloor === floor
+                  ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
+                  : 'bg-white text-slate-500 border-slate-200 hover:bg-indigo-50 hover:text-indigo-700'
+              }`}
+            >
+              Kat {floor}
+            </button>
+          ))}
+        </div>
 
-          {dryers.length > 0 && (
-            <section>
-              <h2 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
-                <span className="w-8 h-8 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center">D</span>
-                Dryers
-              </h2>
-              {viewMode === 'grid' ? (
-                <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-4">
-                  {dryers.map((machine) => (
-                    <MachineCard key={machine.id} machine={machine} onClick={setSelectedMachine} />
-                  ))}
-                </div>
-              ) : (
-                <div className="flex flex-col">
-                  {dryers.map((machine) => (
-                    <MachineListRow 
-                      key={machine.id} 
-                      machine={machine} 
-                      onToggleQueue={() => toggleQueue(machine.id)} 
-                      executeWithAuth={executeWithAuth}
-                      onActionSuccess={fetchMachines}
-                    />
-                  ))}
+        {/* Location Badge */}
+        <div className="mb-6">
+          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-700 bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-full">
+            <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 inline-block"></span>
+            {selectedBlock} Blok &ndash; Kat {selectedFloor}
+          </span>
+        </div>
+
+        {/* Machine List */}
+        <main className="space-y-12">
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center py-20 text-slate-400">
+              <Loader2 className="w-10 h-10 animate-spin mb-4" />
+              <p className="font-medium text-slate-500">Makineler Yükleniyor...</p>
+            </div>
+          ) : machines.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 bg-white rounded-xl shadow-sm border border-slate-200">
+              <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4 text-2xl">🧺</div>
+              <h3 className="text-xl font-bold text-slate-700 mb-2">Henüz Makine Yok</h3>
+              <p className="text-slate-500 text-center max-w-sm">
+                Sistemde tanımlı hiçbir makine bulunamadı. Admin panelinden makine ekleyebilirsiniz.
+              </p>
+            </div>
+          ) : (
+            <>
+              {washingMachines.length > 0 && (
+                <section>
+                  <h2 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+                    <span className="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center">W</span>
+                    Camasir Makineleri
+                  </h2>
+                  {viewMode === 'grid' ? (
+                    <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-4">
+                      {washingMachines.map((machine) => (
+                        <MachineCard key={machine.id} machine={machine} onClick={setSelectedMachine} />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="flex flex-col">
+                      {washingMachines.map((machine) => (
+                        <MachineListRow
+                          key={machine.id}
+                          machine={machine}
+                          onToggleQueue={() => toggleQueue(machine.id)}
+                          executeWithAuth={executeWithAuth}
+                          onActionSuccess={fetchMachines}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </section>
+              )}
+
+              {dryers.length > 0 && (
+                <section>
+                  <h2 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+                    <span className="w-8 h-8 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center">D</span>
+                    Kurutma Makineleri
+                  </h2>
+                  {viewMode === 'grid' ? (
+                    <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-4">
+                      {dryers.map((machine) => (
+                        <MachineCard key={machine.id} machine={machine} onClick={setSelectedMachine} />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="flex flex-col">
+                      {dryers.map((machine) => (
+                        <MachineListRow
+                          key={machine.id}
+                          machine={machine}
+                          onToggleQueue={() => toggleQueue(machine.id)}
+                          executeWithAuth={executeWithAuth}
+                          onActionSuccess={fetchMachines}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </section>
+              )}
+
+              {filteredMachines.length === 0 && (
+                <div className="flex flex-col items-center justify-center py-16 bg-white rounded-xl shadow-sm border border-slate-200">
+                  <div className="w-14 h-14 bg-slate-100 rounded-full flex items-center justify-center mb-3 text-2xl">🔍</div>
+                  <p className="text-slate-500 font-medium">Bu kat icin makine bulunamadi.</p>
                 </div>
               )}
-            </section>
+            </>
           )}
         </main>
       </div>
 
-      <MachineModal 
-        machine={selectedMachine} 
-        isOpen={!!selectedMachine} 
-        onClose={() => setSelectedMachine(null)} 
+      <MachineModal
+        machine={selectedMachine}
+        isOpen={!!selectedMachine}
+        onClose={() => setSelectedMachine(null)}
         onToggleQueue={toggleQueue}
         executeWithAuth={executeWithAuth}
         onActionSuccess={fetchMachines}
       />
-      <AuthModal 
-        isOpen={isAuthModalOpen} 
+      <AuthModal
+        isOpen={isAuthModalOpen}
         onClose={() => {
           setIsAuthModalOpen(false);
           setPendingAction(null);
-        }} 
-        onSuccess={handleAuthSuccess} 
+        }}
+        onSuccess={handleAuthSuccess}
       />
     </div>
   );

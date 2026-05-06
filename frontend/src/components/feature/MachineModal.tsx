@@ -1,6 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
+import toast from 'react-hot-toast';
 import { Machine } from '../../types';
-import { startMachine, clearMachine, reportMachine, getOwnerWhatsApp } from '../../services/api';
+import { startMachine, clearMachine, reportMachine, getOwnerWhatsApp, extendMachine } from '../../services/api';
+import { getSavedUser } from '../../services/auth';
+import InputModal from '../ui/InputModal';
+import ConfirmModal from '../ui/ConfirmModal';
+import StartMachineModal from '../ui/StartMachineModal';
 
 interface MachineModalProps {
   machine: Machine | null;
@@ -12,6 +17,19 @@ interface MachineModalProps {
 }
 
 const MachineModal: React.FC<MachineModalProps> = ({ machine, isOpen, onClose, onToggleQueue, executeWithAuth, onActionSuccess }) => {
+  const [reportMode, setReportMode] = useState(false);
+  const [isStartModalOpen, setIsStartModalOpen] = useState(false);
+  const [isExtendModalOpen, setIsExtendModalOpen] = useState(false);
+  const [isClearModalOpen, setIsClearModalOpen] = useState(false);
+
+  const currentUser = getSavedUser();
+  const isCurrentUserActive = currentUser && machine?.activeUserId === currentUser.id;
+
+  const handleClose = () => {
+    setReportMode(false);
+    onClose();
+  };
+
   if (!isOpen || !machine) return null;
 
   const getStatusBadge = (status: Machine['status']) => {
@@ -29,46 +47,61 @@ const MachineModal: React.FC<MachineModalProps> = ({ machine, isOpen, onClose, o
     ? Math.round((new Date(machine.endTime).getTime() - new Date().getTime()) / 60000)
     : 0;
 
-  const handleStart = () => {
+  const handleStartSubmit = (durationMinutes: number, userNote?: string) => {
     if (!executeWithAuth) return;
-    const minutesStr = window.prompt("Program duration in minutes?", "45");
-    if (!minutesStr) return;
-    const durationMinutes = parseInt(minutesStr, 10);
-    const userNote = window.prompt("Any notes for the next person? (Optional)") || undefined;
-
     executeWithAuth(async (userId) => {
       try {
         await startMachine(machine.id, userId, durationMinutes, userNote);
+        toast.success('Makine başarıyla başlatıldı!');
         onActionSuccess?.();
-        onClose();
+        handleClose();
       } catch (e: any) {
-        alert(e.message);
+        toast.error(e.message);
       }
     });
   };
 
-  const handleClear = () => {
+  const handleClearConfirm = () => {
     if (!executeWithAuth) return;
     executeWithAuth(async () => {
       try {
         await clearMachine(machine.id);
+        toast.success('Makine başarıyla boşaltıldı!');
         onActionSuccess?.();
-        onClose();
+        handleClose();
       } catch (e: any) {
-        alert(e.message);
+        toast.error(e.message);
       }
     });
   };
 
-  const handleReport = () => {
+  const handleExtendSubmit = (minutesStr: string) => {
+    if (!executeWithAuth) return;
+    const extraMinutes = parseInt(minutesStr, 10);
+    if (isNaN(extraMinutes) || extraMinutes <= 0) return;
+
+    executeWithAuth(async () => {
+      try {
+        await extendMachine(machine.id, extraMinutes);
+        toast.success('Süre uzatıldı!');
+        onActionSuccess?.();
+        handleClose();
+      } catch (e: any) {
+        toast.error(e.message);
+      }
+    });
+  };
+
+  const handleReport = (issueType: 'FULL' | 'BROKEN') => {
     if (!executeWithAuth) return;
     executeWithAuth(async (userId) => {
       try {
-        await reportMachine(machine.id, userId);
+        await reportMachine(machine.id, userId, issueType);
+        toast.success('Sorun başarıyla bildirildi.');
         onActionSuccess?.();
-        onClose();
+        handleClose();
       } catch (e: any) {
-        alert(e.message);
+        toast.error(e.message);
       }
     });
   };
@@ -78,7 +111,7 @@ const MachineModal: React.FC<MachineModalProps> = ({ machine, isOpen, onClose, o
       const data = await getOwnerWhatsApp(machine.id);
       window.open(data.whatsappUrl, '_blank');
     } catch (e: any) {
-      alert(e.message);
+      toast.error(e.message);
     }
   };
 
@@ -97,7 +130,7 @@ const MachineModal: React.FC<MachineModalProps> = ({ machine, isOpen, onClose, o
             <p className="text-sm text-slate-500 font-medium">Floor {machine.floor}</p>
           </div>
           <button 
-            onClick={onClose}
+            onClick={handleClose}
             className="p-2 text-slate-400 hover:bg-slate-200 hover:text-slate-700 rounded-full transition-colors"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
@@ -141,27 +174,37 @@ const MachineModal: React.FC<MachineModalProps> = ({ machine, isOpen, onClose, o
         {/* Footer Actions */}
         <div className="p-5 bg-slate-50 border-t border-slate-100 flex flex-col gap-3">
           {machine.status === 'BOS' && (
-            <button onClick={handleStart} className="w-full bg-slate-900 hover:bg-slate-800 text-white py-3 rounded-xl text-sm font-semibold transition-colors duration-200 shadow-sm">
+            <button onClick={() => setIsStartModalOpen(true)} className="w-full bg-slate-900 hover:bg-slate-800 text-white py-3 rounded-xl text-sm font-semibold transition-colors duration-200 shadow-sm">
               Start Use
             </button>
           )}
           
           {machine.status === 'DOLU' && (
-            <button 
-              onClick={() => onToggleQueue?.(machine.id)}
-              className={`w-full py-3 rounded-xl text-sm font-semibold transition-colors duration-200 shadow-sm ${
-                machine.isCurrentUserInQueue 
-                ? 'bg-purple-100 text-purple-700 hover:bg-purple-200 border border-purple-300' 
-                : 'bg-purple-600 hover:bg-purple-700 text-white'
-              }`}
-            >
-              {machine.isCurrentUserInQueue ? 'Leave Queue' : 'Join Queue'}
-            </button>
+            <>
+              {isCurrentUserActive && (
+                <button 
+                  onClick={() => setIsExtendModalOpen(true)}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl text-sm font-semibold transition-colors duration-200 shadow-sm"
+                >
+                  Süreyi Uzat (+15 dk)
+                </button>
+              )}
+              <button 
+                onClick={() => onToggleQueue?.(machine.id)}
+                className={`w-full py-3 rounded-xl text-sm font-semibold transition-colors duration-200 shadow-sm ${
+                  machine.isCurrentUserInQueue 
+                  ? 'bg-purple-100 text-purple-700 hover:bg-purple-200 border border-purple-300' 
+                  : 'bg-purple-600 hover:bg-purple-700 text-white'
+                }`}
+              >
+                {machine.isCurrentUserInQueue ? 'Leave Queue' : 'Join Queue'}
+              </button>
+            </>
           )}
           
           {machine.status === 'BITTI' && (
             <>
-              <button onClick={handleClear} className="w-full bg-slate-900 hover:bg-slate-800 text-white py-3 rounded-xl text-sm font-semibold transition-colors duration-200 shadow-sm">
+              <button onClick={() => setIsClearModalOpen(true)} className="w-full bg-slate-900 hover:bg-slate-800 text-white py-3 rounded-xl text-sm font-semibold transition-colors duration-200 shadow-sm">
                 I took my laundry (Clear)
               </button>
               <button onClick={handleWhatsApp} className="w-full bg-green-500 hover:bg-green-600 text-white py-3 rounded-xl text-sm font-semibold transition-colors duration-200 shadow-sm flex items-center justify-center gap-2">
@@ -177,13 +220,63 @@ const MachineModal: React.FC<MachineModalProps> = ({ machine, isOpen, onClose, o
             </button>
           )}
 
-          {machine.status !== 'BOZUK' && (
-            <button onClick={handleReport} className="w-full py-3 bg-white hover:bg-red-50 text-red-600 border border-slate-200 hover:border-red-200 rounded-xl text-sm font-semibold transition-colors duration-200">
+          {machine.status !== 'BOZUK' && !reportMode && (
+            <button onClick={() => setReportMode(true)} className="w-full py-3 bg-white hover:bg-red-50 text-red-600 border border-slate-200 hover:border-red-200 rounded-xl text-sm font-semibold transition-colors duration-200">
               Report Issue
             </button>
           )}
+
+          {reportMode && (
+            <div className="flex flex-col gap-2 p-3 bg-red-50 rounded-xl border border-red-100">
+              <p className="text-sm text-red-800 font-semibold mb-1 text-center">Select Issue Type</p>
+              <button 
+                onClick={() => handleReport('FULL')} 
+                className="w-full py-2 bg-white hover:bg-red-50 text-red-600 border border-red-200 rounded-lg text-sm font-semibold transition-colors"
+              >
+                System says Empty, but actually Full
+              </button>
+              <button 
+                onClick={() => handleReport('BROKEN')} 
+                className="w-full py-2 bg-white hover:bg-red-50 text-red-600 border border-red-200 rounded-lg text-sm font-semibold transition-colors"
+              >
+                Machine is Broken
+              </button>
+              <button 
+                onClick={() => setReportMode(false)} 
+                className="w-full py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-sm font-semibold mt-1 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          )}
         </div>
       </div>
+
+      <StartMachineModal 
+        isOpen={isStartModalOpen}
+        onClose={() => setIsStartModalOpen(false)}
+        onSubmit={handleStartSubmit}
+      />
+
+      <InputModal 
+        isOpen={isExtendModalOpen}
+        title="Süreyi Uzat"
+        description="Makine süresini kaç dakika uzatmak istiyorsunuz?"
+        label="Ek Süre (Dakika)"
+        inputType="number"
+        defaultValue="15"
+        onSubmit={handleExtendSubmit}
+        onClose={() => setIsExtendModalOpen(false)}
+      />
+
+      <ConfirmModal 
+        isOpen={isClearModalOpen}
+        title="Çamaşırları Aldınız Mı?"
+        description="Eğer çamaşırlarınızı makineden aldıysanız makineyi 'Boş' statüsüne geçirebilirsiniz."
+        confirmText="Evet, Boşalt"
+        onConfirm={handleClearConfirm}
+        onClose={() => setIsClearModalOpen(false)}
+      />
     </div>
   );
 };
