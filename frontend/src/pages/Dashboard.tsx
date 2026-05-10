@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
 import { Loader2 } from 'lucide-react';
 import MachineCard from '../components/feature/MachineCard';
@@ -26,9 +26,6 @@ const Dashboard: React.FC = () => {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [pendingAction, setPendingAction] = useState<((userId: string) => void) | null>(null);
 
-  React.useEffect(() => {
-    fetchMachines();
-  }, []);
 
   const fetchMachines = async () => {
     setIsLoading(true);
@@ -68,6 +65,23 @@ const Dashboard: React.FC = () => {
       setIsLoading(false);
     }
   };
+
+  // İlk yükleme + 30 saniyede bir otomatik yenile
+  const fetchRef = useRef<() => void>(fetchMachines);
+  useEffect(() => { fetchRef.current = fetchMachines; });
+  useEffect(() => {
+    fetchRef.current();
+    const interval = setInterval(() => fetchRef.current(), 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Modal açıkken: veri güncellenince seçili makineyi de güncelle (WhatsApp butonu görünsün)
+  useEffect(() => {
+    if (selectedMachine) {
+      const fresh = machines.find((m) => m.id === selectedMachine.id);
+      if (fresh) setSelectedMachine(fresh);
+    }
+  }, [machines]);
 
   const filteredMachines = machines.filter(
     (m) => m.block === selectedBlock && m.floor === selectedFloor

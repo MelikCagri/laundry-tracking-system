@@ -39,6 +39,12 @@ export const startCronJobs = () => {
 
       // Timer up: only fire once in the first minute after expiry (0 to -1 min)
       if (minutesRemaining <= 0 && minutesRemaining > -1) {
+        // ← KRİTİK: DB'yi BITTI olarak güncelle
+        await prisma.machine.update({
+          where: { id: machine.id },
+          data: { status: 'BITTI' },
+        });
+
         await sendNotificationToUser(machine.activeUserId, {
           title: '✅ Çamaşırınız Yıkandı!',
           body: 'Süre doldu. Lütfen çamaşırlarınızı alın ve makineyi boşaltın.',

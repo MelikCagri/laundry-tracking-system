@@ -107,17 +107,20 @@ export const extendMachine = async (
 ) => {
   const machine = await prisma.machine.findUnique({ where: { id: machineId } });
   if (!machine) throw new Error('Machine not found');
-  if (machine.status !== MachineStatus.DOLU)
+  if (machine.status !== MachineStatus.DOLU && machine.status !== MachineStatus.BITTI)
     throw new Error('Machine is not currently in use');
 
-  const newEndTime = new Date(
-    (machine.endTime?.getTime() ?? Date.now()) + extraMinutes * 60 * 1000
-  );
+  const baseTime = machine.status === MachineStatus.BITTI ? Date.now() : (machine.endTime?.getTime() ?? Date.now());
+  const newEndTime = new Date(baseTime + extraMinutes * 60 * 1000);
   const newDuration = (machine.durationMinutes ?? 0) + extraMinutes;
 
   return prisma.machine.update({
     where: { id: machineId },
-    data: { endTime: newEndTime, durationMinutes: newDuration },
+    data: { 
+      endTime: newEndTime, 
+      durationMinutes: newDuration,
+      status: MachineStatus.DOLU // always reset to DOLU just in case it was BITTI
+    },
   });
 };
 
@@ -180,12 +183,13 @@ export const getOwnerWhatsApp = async (machineId: string) => {
     throw new Error('Machine is not in BITTI status');
   if (!machine.activeUser) throw new Error('No owner found for this machine');
 
-  // Format phone for WhatsApp (remove leading 0, add country code if needed)
+  // Format phone for WhatsApp (remove leading 0, add Turkey country code)
   const raw = machine.activeUser.phone.replace(/\D/g, '');
-  const waNumber = raw.startsWith('0') ? '90' + raw.slice(1) : raw;
-  const waLink = `https://wa.me/${waNumber}`;
+  const waNumber = raw.startsWith('0') ? '90' + raw.slice(1) : '90' + raw;
+  const message = 'Merhaba! Çamaşır makinenizin süresi doldu. Lütfen çamaşırlarınızı almayı unutmayın 🧺';
+  const whatsappUrl = `https://wa.me/${waNumber}?text=${encodeURIComponent(message)}`;
 
-  return { whatsappLink: waLink };
+  return { whatsappUrl };
 };
 
 // ─────────────────────────────────────────────

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Machine } from '../../types';
-import { startMachine, clearMachine, reportMachine, getOwnerWhatsApp } from '../../services/api';
+import { startMachine, clearMachine, reportMachine, getOwnerWhatsApp, extendMachine } from '../../services/api';
+import { getSavedUser } from '../../services/auth';
 
 interface MachineListRowProps {
   machine: Machine;
@@ -36,6 +37,9 @@ const MachineListRow: React.FC<MachineListRowProps> = ({ machine, onToggleQueue,
   const remainingTime = isFull && machine.endTime 
     ? Math.round((new Date(machine.endTime).getTime() - new Date().getTime()) / 60000)
     : 0;
+
+  const currentUser = getSavedUser();
+  const isCurrentUserActive = currentUser && machine.activeUserId === currentUser.id;
 
   const handleStart = () => {
     if (!executeWithAuth) return;
@@ -192,13 +196,34 @@ const MachineListRow: React.FC<MachineListRowProps> = ({ machine, onToggleQueue,
               )}
               {machine.status === 'BITTI' && (
                 <>
-                  <button onClick={handleClear} className="w-full bg-slate-900 hover:bg-slate-800 text-white py-2.5 rounded-lg text-sm font-semibold transition-colors duration-200 shadow-sm">
-                    Çamaşırları Aldım (Boşalt)
-                  </button>
-                  <button onClick={handleWhatsApp} className="w-full bg-green-500 hover:bg-green-600 text-white py-2.5 rounded-lg text-sm font-semibold transition-colors duration-200 shadow-sm flex items-center justify-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
-                    Sahibine WhatsApp Gönder
-                  </button>
+                  {isCurrentUserActive ? (
+                    <>
+                      <button onClick={handleClear} className="w-full bg-slate-900 hover:bg-slate-800 text-white py-2.5 rounded-lg text-sm font-semibold transition-colors duration-200 shadow-sm">
+                        Çamaşırları Aldım (Boşalt)
+                      </button>
+                      <button 
+                        onClick={() => {
+                          if (!executeWithAuth) return;
+                          executeWithAuth(async () => {
+                            try {
+                              await extendMachine(machine.id, 15);
+                              onActionSuccess?.();
+                            } catch (e: any) {
+                              alert(e.message);
+                            }
+                          });
+                        }}
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg text-sm font-semibold transition-colors duration-200 shadow-sm mt-2"
+                      >
+                        Süreyi Uzat (+15 dk)
+                      </button>
+                    </>
+                  ) : (
+                    <button onClick={handleWhatsApp} className="w-full bg-green-500 hover:bg-green-600 text-white py-2.5 rounded-lg text-sm font-semibold transition-colors duration-200 shadow-sm flex items-center justify-center gap-2">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                      Sahibine WhatsApp Gönder
+                    </button>
+                  )}
                 </>
               )}
               {machine.status === 'BOZUK' && (

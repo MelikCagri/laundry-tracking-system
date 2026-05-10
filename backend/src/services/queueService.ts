@@ -1,4 +1,5 @@
 import prisma from '../lib/prisma';
+import { sendNotificationToUser } from './notificationService';
 
 // Join queue for a machine
 export const joinQueue = async (machineId: string, userId: string) => {
@@ -44,10 +45,32 @@ export const skipQueue = async (machineId: string, userId: string) => {
   });
   if (!entry) throw new Error('No pending turn found for this machine');
 
-  return prisma.queue.update({
+  // SKIPPED olarak işaretle
+  await prisma.queue.update({
     where: { id: entry.id },
     data: { status: 'SKIPPED' },
   });
+
+  // Bir sonraki WAITING kişiyi bul ve bildirim gönder
+  const nextInQueue = await prisma.queue.findFirst({
+    where: { machineId, status: 'WAITING' },
+    orderBy: { joinedAt: 'asc' },
+  });
+
+  if (nextInQueue) {
+    await prisma.queue.update({
+      where: { id: nextInQueue.id },
+      data: { status: 'COMPLETED', notifiedAt: new Date() },
+    });
+    await sendNotificationToUser(nextInQueue.userId, {
+      title: '🚀 Sıra Sizde!',
+      body: 'Çamaşır makinesi hala boş. Makineyi kullanmak ister misiniz?',
+      url: '/',
+      tag: `queue-turn-${machineId}`,
+    });
+  }
+
+  return entry;
 };
 
 // Get queue info for a machine

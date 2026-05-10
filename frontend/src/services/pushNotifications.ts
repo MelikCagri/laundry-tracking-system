@@ -1,4 +1,4 @@
-const API_BASE = 'http://localhost:5000/api';
+const API_BASE = import.meta.env.VITE_API_URL as string;
 
 /**
  * Converts a base64 URL string to a Uint8Array — required by the Web Push API

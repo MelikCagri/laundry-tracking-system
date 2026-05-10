@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL as string;
 
 // Helper to handle fetch responses
 const fetcher = async (url: string, options?: RequestInit) => {
