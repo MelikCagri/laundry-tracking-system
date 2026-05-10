@@ -20,4 +20,5 @@ export interface Machine {
   };
   displayId?: string;
   isCurrentUserInQueue?: boolean;
+  queuePosition?: number | null;
 }

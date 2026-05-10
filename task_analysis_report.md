@@ -25,7 +25,7 @@ Projenin temel iskeleti (Floor 1, 8 makine) kurulmuş durumda ancak sistemin öl
 4.  **Kapsamlı Fonksiyonel Testler:**
     *   **Neden:** Mantıksal hataların (aynı anda iki makine kullanımı vb.) önlenmesi gerekiyor.
     *   **Eylem:** Antigravity araçları ile senaryo bazlı (Race condition, yetkisiz erişim) testlerin yapılması ve raporlanması.
-5.  **Mimari Düzenleme (Execution Katmanı):**
+5.  **Mimari Düzenleme (Execution Katmanı): [tamamlandı]**
     *   **Neden:** 3 katmanlı mimari (Directive-Orchestration-Execution) kurallarına uyum sağlamak.
     *   **Eylem:** `backend` içindeki geçici DB scriptlerini `execution/` klasörüne taşımak ve deterministic hale getirmek.
 

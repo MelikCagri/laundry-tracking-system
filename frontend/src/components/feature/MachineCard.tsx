@@ -1,5 +1,6 @@
 import React from 'react';
 import { Machine } from '../../types';
+import { getSavedUser } from '../../services/auth';
 
 interface MachineCardProps {
   machine: Machine;
@@ -7,31 +8,58 @@ interface MachineCardProps {
 }
 
 const MachineCard: React.FC<MachineCardProps> = ({ machine, onClick }) => {
+  const currentUser = getSavedUser();
+  const isMine = currentUser && machine.activeUserId === currentUser.id;
+
   const getTileStyles = (status: Machine['status']) => {
+    let base = '';
     switch (status) {
       case 'BOS':
-        return 'bg-green-100 text-green-700 border-green-300 hover:bg-green-200 hover:border-green-400';
+        base = 'bg-green-100 text-green-700 border-green-300 hover:bg-green-200 hover:border-green-400';
+        break;
       case 'DOLU':
-        return 'bg-red-100 text-red-700 border-red-300 hover:bg-red-200 hover:border-red-400';
+        base = 'bg-red-100 text-red-700 border-red-300 hover:bg-red-200 hover:border-red-400';
+        break;
       case 'BITTI':
-        return 'bg-yellow-100 text-yellow-700 border-yellow-300 hover:bg-yellow-200 hover:border-yellow-400';
+        base = 'bg-yellow-100 text-yellow-700 border-yellow-300 hover:bg-yellow-200 hover:border-yellow-400';
+        break;
       case 'BOZUK':
-        return 'bg-slate-100 text-slate-500 border-slate-300 hover:bg-slate-200';
+        base = 'bg-slate-100 text-slate-500 border-slate-300 hover:bg-slate-200';
+        break;
       default:
-        return 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200';
+        base = 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200';
     }
+    
+    if (isMine) {
+      if (isExpired) {
+        base += ' ring-4 ring-amber-400 shadow-lg animate-pulse';
+      } else {
+        base += ' ring-4 ring-blue-500 shadow-lg';
+      }
+    }
+    return base;
   };
 
   const isFull = machine.status === 'DOLU';
   const remainingTime = isFull && machine.endTime 
     ? Math.round((new Date(machine.endTime).getTime() - new Date().getTime()) / 60000)
     : null;
+  const isExpired = isMine && remainingTime !== null && remainingTime <= 0;
 
   return (
     <button 
       onClick={() => onClick(machine)}
       className={`relative w-full aspect-square rounded-2xl flex flex-col items-center justify-center border-2 transition-all duration-200 shadow-sm active:scale-95 ${getTileStyles(machine.status)}`}
     >
+      {/* Is Mine Label – inside card, small */}
+      {isMine && (
+        <span className={`text-[9px] font-bold uppercase tracking-wider mt-0.5 ${
+          isExpired ? 'text-amber-600 animate-pulse' : 'text-blue-600'
+        }`}>
+          {isExpired ? 'Süre Bitti!' : 'Senin'}
+        </span>
+      )}
+
       {/* Icon Placeholder (W or D) */}
       <span className="text-2xl font-black opacity-80">
         {machine.type === 'WASHER' ? 'W' : 'D'}

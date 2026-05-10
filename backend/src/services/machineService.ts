@@ -18,6 +18,10 @@ export const startMachine = async (
   durationMinutes: number,
   userNote?: string
 ) => {
+  // Fix 3: Validate user exists first to avoid FK constraint errors
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) throw new Error('User not found. Please re-authenticate.');
+
   const machine = await prisma.machine.findUnique({ where: { id: machineId } });
   if (!machine) throw new Error('Machine not found');
   if (machine.status !== MachineStatus.BOS)
@@ -58,10 +62,23 @@ export const finishMachine = async (machineId: string) => {
 // Clear a machine back to BOS (owner picked up laundry)
 export const clearMachine = async (machineId: string) => {
   // Makine sıfırlandığında REPORT_FULL loglarını temizle (sayaç sıfırlansın)
-  // REPORT_BROKEN logları temizlenmez: Bozukluk kaydı geçmişte kalmalı
   await prisma.log.deleteMany({
     where: { machineId, actionType: 'REPORT_FULL' },
   });
+
+  // Sıradaki ilk kişiyi bul ve durumunu COMPLETED yap (Bildirim atılacak yer burası)
+  const nextInQueue = await prisma.queue.findFirst({
+    where: { machineId, status: 'WAITING' },
+    orderBy: { joinedAt: 'asc' },
+  });
+
+  if (nextInQueue) {
+    await prisma.queue.update({
+      where: { id: nextInQueue.id },
+      data: { status: 'COMPLETED' },
+    });
+    // TODO: Burada nextInQueue.userId'ye "Sıra size geldi" bildirimi atılacak.
+  }
 
   return prisma.machine.update({
     where: { id: machineId },
@@ -102,6 +119,9 @@ export const reportMachine = async (
   userId: string,
   issueType: 'FULL' | 'BROKEN'
 ) => {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) throw new Error('User not found. Please re-authenticate.');
+
   const machine = await prisma.machine.findUnique({ where: { id: machineId } });
   if (!machine) throw new Error('Machine not found');
 

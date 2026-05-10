@@ -40,11 +40,24 @@ const Dashboard: React.FC = () => {
         userQueues = queues.map((q: any) => q.machineId);
       }
 
-      const withDisplayIds = data.map((m: any, index: number) => ({
-        ...m,
-        displayId: (index + 1).toString(),
-        isCurrentUserInQueue: userQueues.includes(m.id),
-      }));
+      // Per-block-floor display IDs (each floor starts from 1)
+      const displayIdMap: Record<string, number> = {};
+      // Build a map of machineId -> queue position for current user
+      const queuePositionMap: Record<string, number> = {};
+      userQueues.forEach((q: any) => {
+        queuePositionMap[q.machineId] = q.position;
+      });
+
+      const withDisplayIds = data.map((m: any) => {
+        const key = `${m.block}-${m.floor}-${m.type}`;
+        displayIdMap[key] = (displayIdMap[key] || 0) + 1;
+        return {
+          ...m,
+          displayId: displayIdMap[key].toString(),
+          isCurrentUserInQueue: userQueues.some((q: any) => q.machineId === m.id),
+          queuePosition: queuePositionMap[m.id] ?? null,
+        };
+      });
       setMachines(withDisplayIds);
     } catch (error) {
       console.error('Failed to fetch machines:', error);
@@ -89,15 +102,48 @@ const Dashboard: React.FC = () => {
           await joinQueue(machineId, userId);
           toast.success('Sıraya katıldınız!');
         }
-        await fetchMachines();
+
+        // Single re-fetch — update both machine list and open modal atomically
+        const allData = await getAllMachines();
+        const user = getSavedUser();
+        let userQueues: string[] = [];
+        if (user) {
+          const queues = await getUserQueues(user.id);
+          userQueues = queues.map((q: any) => q.machineId);
+        }
+        const displayIdMap2: Record<string, number> = {};
+        const queuePositionMap2: Record<string, number> = {};
+        userQueues.forEach((q: any) => {
+          queuePositionMap2[q.machineId] = q.position;
+        });
+
+        const withDisplayIds = allData.map((machine: any) => {
+          const key = `${machine.block}-${machine.floor}-${machine.type}`;
+          displayIdMap2[key] = (displayIdMap2[key] || 0) + 1;
+          return {
+            ...machine,
+            displayId: displayIdMap2[key].toString(),
+            isCurrentUserInQueue: userQueues.some((q: any) => q.machineId === machine.id),
+            queuePosition: queuePositionMap2[machine.id] ?? null,
+          };
+        });
+        setMachines(withDisplayIds);
 
         if (selectedMachine?.id === machineId) {
-          const updatedMachines = await getAllMachines();
-          const updatedM = updatedMachines.find((mac: Machine) => mac.id === machineId);
+          const updatedM = withDisplayIds.find((mac: Machine) => mac.id === machineId);
           if (updatedM) setSelectedMachine(updatedM);
         }
       } catch (error: any) {
-        toast.error(error.message || 'Failed to update queue.');
+        if (error.message?.includes('User not found') || error.message?.includes('re-authenticate')) {
+          // Stale session: DB was reset but localStorage has old user ID
+          const { clearUser } = await import('../services/auth');
+          clearUser();
+          toast.error('Oturum süresi dolmuş. Lütfen telefon numaranızı tekrar girin.');
+          setPendingAction(() => () => toggleQueue(machineId));
+          setIsAuthModalOpen(true);
+        } else {
+          toast.error(error.message || 'Failed to update queue.');
+        }
       }
     });
   };

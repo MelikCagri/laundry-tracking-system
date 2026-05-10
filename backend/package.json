@@ -7,7 +7,7 @@
         "start": "node dist/src/index.js",
         "build": "tsc",
         "dev": "nodemon --exec ts-node src/index.ts",
-        "seed": "ts-node prisma/seed.ts",
+        "seed": "ts-node ../execution/seed.ts",
         "test": "echo Error: no test specified && exit 1"
     },
     "keywords": [],
@@ -30,5 +30,8 @@
         "prisma": "^6.19.3",
         "ts-node": "^10.9.2",
         "typescript": "^6.0.3"
+    },
+    "prisma": {
+        "seed": "ts-node ../execution/seed.ts"
     }
 }

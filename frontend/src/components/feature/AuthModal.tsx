@@ -16,8 +16,9 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) => 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!phone || phone.length < 10) {
-      setError('Please enter a valid phone number (e.g., +905551234567)');
+    const phoneRegex = /^5\d{9}$/;
+    if (!phoneRegex.test(phone)) {
+      setError('Lütfen 10 haneli geçerli bir numara girin (Örn: 5449616071)');
       return;
     }
     
@@ -56,7 +57,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) => 
                 type="tel"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                placeholder="+905551234567"
+                placeholder="5XX XXX XX XX"
                 className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-slate-500 focus:ring-2 focus:ring-slate-200 transition-all outline-none"
                 disabled={loading}
               />

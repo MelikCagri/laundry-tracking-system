@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import toast from 'react-hot-toast';
 import { Machine } from '../../types';
 import { startMachine, clearMachine, reportMachine, getOwnerWhatsApp, extendMachine } from '../../services/api';
-import { getSavedUser } from '../../services/auth';
+import { getSavedUser, clearUser } from '../../services/auth';
 import InputModal from '../ui/InputModal';
 import ConfirmModal from '../ui/ConfirmModal';
 import StartMachineModal from '../ui/StartMachineModal';
@@ -47,18 +47,34 @@ const MachineModal: React.FC<MachineModalProps> = ({ machine, isOpen, onClose, o
     ? Math.round((new Date(machine.endTime).getTime() - new Date().getTime()) / 60000)
     : 0;
 
-  const handleStartSubmit = (durationMinutes: number, userNote?: string) => {
+  // Fix 1+2: Auth-first flow. executeWithAuth gates the action;
+  // only after auth succeeds do we open the StartMachineModal.
+  const handleStartUseClick = () => {
     if (!executeWithAuth) return;
-    executeWithAuth(async (userId) => {
-      try {
-        await startMachine(machine.id, userId, durationMinutes, userNote);
-        toast.success('Makine başarıyla başlatıldı!');
-        onActionSuccess?.();
-        handleClose();
-      } catch (e: any) {
+    executeWithAuth(() => {
+      setIsStartModalOpen(true);
+    });
+  };
+
+  const handleStartSubmit = async (durationMinutes: number, userNote?: string) => {
+    const user = getSavedUser();
+    if (!user) return;
+    try {
+      await startMachine(machine.id, user.id, durationMinutes, userNote);
+      toast.success('Makine başarıyla başlatıldı!');
+      onActionSuccess?.();
+      handleClose();
+    } catch (e: any) {
+      // Fix 4: Stale session cleanup — if user no longer exists in DB, reset session
+      if (e.message?.toLowerCase().includes('user not found') ||
+          e.message?.toLowerCase().includes('foreign key') ||
+          e.message?.toLowerCase().includes('not found')) {
+        clearUser();
+        toast.error('Oturum süresi doldu. Lütfen tekrar numara girin.');
+      } else {
         toast.error(e.message);
       }
-    });
+    }
   };
 
   const handleClearConfirm = () => {
@@ -70,7 +86,13 @@ const MachineModal: React.FC<MachineModalProps> = ({ machine, isOpen, onClose, o
         onActionSuccess?.();
         handleClose();
       } catch (e: any) {
-        toast.error(e.message);
+        if (e.message?.toLowerCase().includes('user not found') ||
+            e.message?.toLowerCase().includes('foreign key')) {
+          clearUser();
+          toast.error('Oturum süresi doldu. Lütfen tekrar numara girin.');
+        } else {
+          toast.error(e.message);
+        }
       }
     });
   };
@@ -157,9 +179,16 @@ const MachineModal: React.FC<MachineModalProps> = ({ machine, isOpen, onClose, o
             <div className="flex justify-between items-center bg-purple-50 p-3 rounded-xl border border-purple-100">
               <span className="text-purple-600 font-semibold flex items-center gap-2">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-                Queue Line
+                Sıra
               </span>
-              <span className="text-xl font-bold text-purple-700">{machine._count?.queueEntries || 0} person(s)</span>
+              <div className="flex items-center gap-2">
+                <span className="text-xl font-bold text-purple-700">{machine._count?.queueEntries || 0} kişi</span>
+                {machine.isCurrentUserInQueue && machine.queuePosition != null && (
+                  <span className="bg-purple-600 text-white text-xs font-bold px-2 py-1 rounded-full">
+                    #{machine.queuePosition}. sıradayım
+                  </span>
+                )}
+              </div>
             </div>
           )}
 
@@ -174,7 +203,7 @@ const MachineModal: React.FC<MachineModalProps> = ({ machine, isOpen, onClose, o
         {/* Footer Actions */}
         <div className="p-5 bg-slate-50 border-t border-slate-100 flex flex-col gap-3">
           {machine.status === 'BOS' && (
-            <button onClick={() => setIsStartModalOpen(true)} className="w-full bg-slate-900 hover:bg-slate-800 text-white py-3 rounded-xl text-sm font-semibold transition-colors duration-200 shadow-sm">
+            <button onClick={handleStartUseClick} className="w-full bg-slate-900 hover:bg-slate-800 text-white py-3 rounded-xl text-sm font-semibold transition-colors duration-200 shadow-sm">
               Start Use
             </button>
           )}
@@ -182,12 +211,19 @@ const MachineModal: React.FC<MachineModalProps> = ({ machine, isOpen, onClose, o
           {machine.status === 'DOLU' && (
             <>
               {isCurrentUserActive && (
-                <button 
-                  onClick={() => setIsExtendModalOpen(true)}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl text-sm font-semibold transition-colors duration-200 shadow-sm"
-                >
-                  Süreyi Uzat (+15 dk)
-                </button>
+                <>
+                  <button 
+                    onClick={() => setIsExtendModalOpen(true)}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl text-sm font-semibold transition-colors duration-200 shadow-sm"
+                  >
+                    Süreyi Uzat (+15 dk)
+                  </button>
+                  {remainingTime <= 0 && (
+                    <button onClick={() => setIsClearModalOpen(true)} className="w-full bg-slate-900 hover:bg-slate-800 text-white py-3 rounded-xl text-sm font-semibold transition-colors duration-200 shadow-sm mt-2">
+                      Çamaşırları Aldım (Boşalt)
+                    </button>
+                  )}
+                </>
               )}
               <button 
                 onClick={() => onToggleQueue?.(machine.id)}
