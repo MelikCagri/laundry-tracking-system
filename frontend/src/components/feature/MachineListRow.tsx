@@ -70,7 +70,7 @@ const MachineListRow: React.FC<MachineListRowProps> = ({ machine, onToggleQueue,
     if (!executeWithAuth) return;
     executeWithAuth(async (userId) => {
       try {
-        await reportMachine(machine.id, userId);
+        await reportMachine(machine.id, userId, 'FULL');
         onActionSuccess?.();
       } catch (e: any) {
         alert(e.message);

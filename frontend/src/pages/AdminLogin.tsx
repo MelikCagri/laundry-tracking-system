@@ -90,9 +90,6 @@ const AdminLogin = () => {
           </button>
         </form>
 
-        <p className="text-xs text-slate-400 text-center mt-5">
-          Giriş için: <span className="font-mono font-bold">admin</span> / <span className="font-mono font-bold">password123</span>
-        </p>
       </div>
     </div>
   );

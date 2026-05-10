@@ -194,10 +194,13 @@ export const getOwnerWhatsApp = async (machineId: string) => {
 
 const GHOST_ADMIN_PHONE = '0000000000';
 
-// Ghost Admin ID'sini veritabanından çek
+// Ghost Admin ID'sini veritabanından çek (yoksa otomatik oluştur)
 const getGhostAdminId = async (): Promise<string> => {
-  const admin = await prisma.user.findUnique({ where: { phone: GHOST_ADMIN_PHONE } });
-  if (!admin) throw new Error('Ghost Admin not found in DB. Please run the seed script.');
+  const admin = await prisma.user.upsert({
+    where: { phone: GHOST_ADMIN_PHONE },
+    update: {},
+    create: { phone: GHOST_ADMIN_PHONE },
+  });
   return admin.id;
 };
 

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { getSavedUser } from '../../services/auth';
-import { getUserPendingTurn, skipQueue, startMachine } from '../../services/api';
+import { getUserPendingTurn, skipQueue } from '../../services/api';
 
 interface PendingTurn {
   id: string;

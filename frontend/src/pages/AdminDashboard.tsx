@@ -12,7 +12,7 @@ import {
 } from '../services/api';
 import CreateMachineModal from '../components/ui/CreateMachineModal';
 import ConfirmModal from '../components/ui/ConfirmModal';
-import InputModal from '../components/ui/InputModal';
+import StatusModal from '../components/ui/StatusModal';
 
 const AdminDashboard: React.FC = () => {
   const [machines, setMachines] = useState<Machine[]>([]);
@@ -91,13 +91,8 @@ const AdminDashboard: React.FC = () => {
 
   const handleChangeStatusSubmit = async (newStatus: string) => {
     if (!machineToChangeStatus) return;
-    const s = newStatus.toUpperCase();
-    if (!['BOS', 'DOLU', 'BITTI', 'BOZUK'].includes(s)) {
-      toast.error('Geçersiz durum girdiniz.');
-      return;
-    }
     try {
-      await setMachineStatus(machineToChangeStatus.id, s as 'BOS' | 'DOLU' | 'BITTI' | 'BOZUK');
+      await setMachineStatus(machineToChangeStatus.id, newStatus as 'BOS' | 'DOLU' | 'BITTI' | 'BOZUK');
       toast.success('Makine durumu güncellendi.');
       fetchMachines();
     } catch (e: any) {
@@ -233,12 +228,9 @@ const AdminDashboard: React.FC = () => {
         onConfirm={handleReset}
       />
 
-      <InputModal 
+      <StatusModal
         isOpen={!!machineToChangeStatus}
-        title="Durum Değiştir"
-        description={`Mevcut Durum: ${machineToChangeStatus?.status}`}
-        label="Yeni Durum (BOS, DOLU, BITTI, BOZUK)"
-        defaultValue={machineToChangeStatus?.status}
+        currentStatus={machineToChangeStatus?.status || ''}
         onClose={() => setMachineToChangeStatus(null)}
         onSubmit={handleChangeStatusSubmit}
       />
