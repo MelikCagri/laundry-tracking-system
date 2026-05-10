@@ -18,7 +18,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) => 
     e.preventDefault();
     const phoneRegex = /^5\d{9}$/;
     if (!phoneRegex.test(phone)) {
-      setError('Lütfen 10 haneli geçerli bir numara girin (Örn: 5449616071)');
+      setError('Lütfen 10 haneli geçerli bir numara girin (Örn: 5551234567)');
       return;
     }
     
@@ -43,15 +43,15 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) => 
         onClick={(e) => e.stopPropagation()}
       >
         <div className="p-6">
-          <h2 className="text-xl font-bold text-slate-900 mb-2">Verification Required</h2>
+          <h2 className="text-xl font-bold text-slate-900 mb-2">Doğrulama Gerekli</h2>
           <p className="text-sm text-slate-500 mb-6">
-            Please enter your phone number to continue. This is used to notify you when your laundry is done and to manage your machines.
+            Devam etmek için telefon numaranızı girin. Bu bilgi, çamaşırlarınız bittiğinde size bildirim göndermek ve makinelerinizi yönetmek için kullanılır.
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-                Phone Number
+                Telefon Numarası
               </label>
               <input
                 type="tel"
@@ -71,7 +71,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) => 
                 className="flex-1 py-3 px-4 rounded-xl font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors"
                 disabled={loading}
               >
-                Cancel
+                Vazgeç
               </button>
               <button
                 type="submit"
@@ -84,7 +84,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) => 
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
                 ) : (
-                  'Continue'
+                  'Devam Et'
                 )}
               </button>
             </div>

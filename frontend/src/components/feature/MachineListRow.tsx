@@ -22,6 +22,16 @@ const MachineListRow: React.FC<MachineListRowProps> = ({ machine, onToggleQueue,
     }
   };
 
+  const getStatusLabel = (status: Machine['status']) => {
+    switch (status) {
+      case 'BOS': return 'Boş';
+      case 'DOLU': return 'Dolu';
+      case 'BITTI': return 'Süre Bitti';
+      case 'BOZUK': return 'Arızalı';
+      default: return status;
+    }
+  };
+
   const isFull = machine.status === 'DOLU';
   const remainingTime = isFull && machine.endTime 
     ? Math.round((new Date(machine.endTime).getTime() - new Date().getTime()) / 60000)
@@ -91,9 +101,9 @@ const MachineListRow: React.FC<MachineListRowProps> = ({ machine, onToggleQueue,
           </div>
           <div className="text-left">
             <h3 className="font-bold text-slate-800">
-              {machine.type === 'WASHER' ? 'Washing' : 'Dryer'} #{machine.displayId || machine.id}
+              {machine.type === 'WASHER' ? 'Çamaşır Makinesi' : 'Kurutma Makinesi'} #{machine.displayId || machine.id}
             </h3>
-            <p className="text-xs text-slate-500">Floor {machine.floor}</p>
+            <p className="text-xs text-slate-500">Kat {machine.floor}</p>
           </div>
         </div>
 
@@ -107,7 +117,7 @@ const MachineListRow: React.FC<MachineListRowProps> = ({ machine, onToggleQueue,
           )}
           
           <div className={`px-3 py-1 rounded-full text-xs font-bold border hidden sm:block ${getStatusBadge(machine.status)}`}>
-            {machine.status}
+            {getStatusLabel(machine.status)}
           </div>
           {/* Mobile minimal status dot */}
           <div className={`w-3 h-3 rounded-full sm:hidden ${
@@ -130,16 +140,16 @@ const MachineListRow: React.FC<MachineListRowProps> = ({ machine, onToggleQueue,
             {/* Left Column: Details */}
             <div className="space-y-3">
               <div className="flex justify-between items-center sm:hidden">
-                 <span className="text-sm font-medium text-slate-500">Status</span>
+                 <span className="text-sm font-medium text-slate-500">Durum</span>
                  <div className={`px-3 py-1 rounded-full text-xs font-bold border ${getStatusBadge(machine.status)}`}>
-                  {machine.status}
+                  {getStatusLabel(machine.status)}
                 </div>
               </div>
 
               {isFull && remainingTime > 0 && (
                 <div className="flex justify-between items-center bg-red-50 p-3 rounded-lg border border-red-100">
-                  <span className="text-sm text-red-600 font-semibold">Remaining</span>
-                  <span className="text-lg font-bold text-red-700">{remainingTime} min</span>
+                  <span className="text-sm text-red-600 font-semibold">Kalan Süre</span>
+                  <span className="text-lg font-bold text-red-700">{remainingTime} dk</span>
                 </div>
               )}
 
@@ -147,15 +157,15 @@ const MachineListRow: React.FC<MachineListRowProps> = ({ machine, onToggleQueue,
                 <div className="flex justify-between items-center bg-purple-50 p-3 rounded-lg border border-purple-100">
                   <span className="text-sm text-purple-600 font-semibold flex items-center gap-1">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-                    Queue
+                    Sıra
                   </span>
-                  <span className="text-lg font-bold text-purple-700">{machine._count?.queueEntries || 0} person(s)</span>
+                  <span className="text-lg font-bold text-purple-700">{machine._count?.queueEntries || 0} kişi</span>
                 </div>
               )}
 
               {machine.userNote && (
                 <div className="bg-blue-50/50 p-3 rounded-lg border border-blue-100">
-                  <p className="text-[10px] text-blue-600 font-bold uppercase tracking-wider mb-1">User Note</p>
+                  <p className="text-[10px] text-blue-600 font-bold uppercase tracking-wider mb-1">Kullanıcı Notu</p>
                   <p className="text-sm text-slate-700 italic">"{machine.userNote}"</p>
                 </div>
               )}
@@ -165,7 +175,7 @@ const MachineListRow: React.FC<MachineListRowProps> = ({ machine, onToggleQueue,
             <div className="flex flex-col gap-2 justify-end">
               {machine.status === 'BOS' && (
                 <button onClick={handleStart} className="w-full bg-slate-900 hover:bg-slate-800 text-white py-2.5 rounded-lg text-sm font-semibold transition-colors duration-200 shadow-sm">
-                  Start Use
+                  Makineyi Kullan
                 </button>
               )}
               {machine.status === 'DOLU' && (
@@ -177,29 +187,29 @@ const MachineListRow: React.FC<MachineListRowProps> = ({ machine, onToggleQueue,
                     : 'bg-purple-600 hover:bg-purple-700 text-white'
                   }`}
                 >
-                  {machine.isCurrentUserInQueue ? 'Leave Queue' : 'Join Queue'}
+                  {machine.isCurrentUserInQueue ? 'Sıradan Çık' : 'Sıraya Gir'}
                 </button>
               )}
               {machine.status === 'BITTI' && (
                 <>
                   <button onClick={handleClear} className="w-full bg-slate-900 hover:bg-slate-800 text-white py-2.5 rounded-lg text-sm font-semibold transition-colors duration-200 shadow-sm">
-                    I took my laundry (Clear)
+                    Çamaşırları Aldım (Boşalt)
                   </button>
                   <button onClick={handleWhatsApp} className="w-full bg-green-500 hover:bg-green-600 text-white py-2.5 rounded-lg text-sm font-semibold transition-colors duration-200 shadow-sm flex items-center justify-center gap-2">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
-                    Send WhatsApp to Owner
+                    Sahibine WhatsApp Gönder
                   </button>
                 </>
               )}
               {machine.status === 'BOZUK' && (
                 <button disabled className="w-full bg-slate-200 text-slate-500 py-2.5 rounded-lg text-sm font-semibold cursor-not-allowed">
-                  Out of Order
+                  Arızalı
                 </button>
               )}
 
               {machine.status !== 'BOZUK' && (
                 <button onClick={handleReport} className="w-full py-2.5 bg-white hover:bg-red-50 text-red-600 border border-slate-200 hover:border-red-200 rounded-lg text-sm font-semibold transition-colors duration-200">
-                  Report Issue
+                  Sorun Bildir
                 </button>
               )}
             </div>

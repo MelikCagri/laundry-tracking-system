@@ -17,7 +17,7 @@ interface InputModalProps {
 
 const InputModal: React.FC<InputModalProps> = ({
   isOpen, title, description, label, inputType = 'text', placeholder, defaultValue = '',
-  submitText = 'Submit', cancelText = 'Cancel', onSubmit, onClose, required = true
+  submitText = 'Gönder', cancelText = 'Vazgeç', onSubmit, onClose, required = true
 }) => {
   const [value, setValue] = useState(defaultValue);
   const [error, setError] = useState('');

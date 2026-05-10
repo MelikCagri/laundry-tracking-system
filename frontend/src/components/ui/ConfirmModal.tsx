@@ -12,7 +12,7 @@ interface ConfirmModalProps {
 }
 
 const ConfirmModal: React.FC<ConfirmModalProps> = ({ 
-  isOpen, title, description, confirmText = 'Confirm', cancelText = 'Cancel', onConfirm, onClose, danger = false 
+  isOpen, title, description, confirmText = 'Onayla', cancelText = 'Vazgeç', onConfirm, onClose, danger = false 
 }) => {
   if (!isOpen) return null;
 

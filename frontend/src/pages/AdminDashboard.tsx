@@ -110,7 +110,7 @@ const AdminDashboard: React.FC = () => {
       <div className="max-w-6xl mx-auto">
         <header className="flex justify-between items-center bg-white p-6 rounded-xl shadow-sm mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-slate-800">Admin Dashboard</h1>
+            <h1 className="text-2xl font-bold text-slate-800">Yönetim Paneli</h1>
             <p className="text-slate-500">Sistem ve makine yönetimi</p>
           </div>
           <div className="flex gap-4">
@@ -155,7 +155,7 @@ const AdminDashboard: React.FC = () => {
                     <span className={`px-2 py-1 rounded text-xs font-bold ${
                       machine.type === 'WASHER' ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700'
                     }`}>
-                      {machine.type}
+                      {machine.type === 'WASHER' ? 'Çamaşır Makinesi' : 'Kurutma Makinesi'}
                     </span>
                   </td>
                   <td className="p-4">

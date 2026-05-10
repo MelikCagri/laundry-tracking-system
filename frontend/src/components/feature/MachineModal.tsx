@@ -42,6 +42,16 @@ const MachineModal: React.FC<MachineModalProps> = ({ machine, isOpen, onClose, o
     }
   };
 
+  const getStatusLabel = (status: Machine['status']) => {
+    switch (status) {
+      case 'BOS': return 'Boş';
+      case 'DOLU': return 'Dolu';
+      case 'BITTI': return 'Süre Bitti';
+      case 'BOZUK': return 'Arızalı';
+      default: return status;
+    }
+  };
+
   const isFull = machine.status === 'DOLU';
   const remainingTime = isFull && machine.endTime 
     ? Math.round((new Date(machine.endTime).getTime() - new Date().getTime()) / 60000)
@@ -147,9 +157,9 @@ const MachineModal: React.FC<MachineModalProps> = ({ machine, isOpen, onClose, o
         <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
           <div>
             <h2 className="text-xl font-bold text-slate-800">
-              {machine.type === 'WASHER' ? 'Washing Machine' : 'Dryer'} #{machine.displayId || machine.id}
+              {machine.type === 'WASHER' ? 'Çamaşır Makinesi' : 'Kurutma Makinesi'} #{machine.displayId || machine.id}
             </h2>
-            <p className="text-sm text-slate-500 font-medium">Floor {machine.floor}</p>
+            <p className="text-sm text-slate-500 font-medium">Kat {machine.floor}</p>
           </div>
           <button 
             onClick={handleClose}
@@ -162,16 +172,16 @@ const MachineModal: React.FC<MachineModalProps> = ({ machine, isOpen, onClose, o
         {/* Body */}
         <div className="p-5 space-y-4">
           <div className="flex justify-between items-center">
-            <span className="text-slate-500 font-medium">Status</span>
+            <span className="text-slate-500 font-medium">Durum</span>
             <div className={`px-3 py-1 rounded-full text-xs font-bold border ${getStatusBadge(machine.status)}`}>
-              {machine.status}
+              {getStatusLabel(machine.status)}
             </div>
           </div>
 
           {isFull && remainingTime > 0 && (
             <div className="flex justify-between items-center bg-red-50 p-3 rounded-xl border border-red-100">
-              <span className="text-red-600 font-semibold">Remaining Time</span>
-              <span className="text-xl font-bold text-red-700">{remainingTime} mins</span>
+              <span className="text-red-600 font-semibold">Kalan Süre</span>
+              <span className="text-xl font-bold text-red-700">{remainingTime} dk</span>
             </div>
           )}
 
@@ -194,7 +204,7 @@ const MachineModal: React.FC<MachineModalProps> = ({ machine, isOpen, onClose, o
 
           {machine.userNote && (
             <div className="bg-blue-50/50 p-4 rounded-xl border border-blue-100">
-              <p className="text-xs text-blue-600 font-semibold mb-1 uppercase tracking-wide">User Note</p>
+              <p className="text-xs text-blue-600 font-semibold mb-1 uppercase tracking-wide">Kullanıcı Notu</p>
               <p className="text-sm text-slate-700 italic">"{machine.userNote}"</p>
             </div>
           )}
@@ -204,7 +214,7 @@ const MachineModal: React.FC<MachineModalProps> = ({ machine, isOpen, onClose, o
         <div className="p-5 bg-slate-50 border-t border-slate-100 flex flex-col gap-3">
           {machine.status === 'BOS' && (
             <button onClick={handleStartUseClick} className="w-full bg-slate-900 hover:bg-slate-800 text-white py-3 rounded-xl text-sm font-semibold transition-colors duration-200 shadow-sm">
-              Start Use
+              Makineyi Kullan
             </button>
           )}
           
@@ -233,7 +243,7 @@ const MachineModal: React.FC<MachineModalProps> = ({ machine, isOpen, onClose, o
                   : 'bg-purple-600 hover:bg-purple-700 text-white'
                 }`}
               >
-                {machine.isCurrentUserInQueue ? 'Leave Queue' : 'Join Queue'}
+                {machine.isCurrentUserInQueue ? 'Sıradan Çık' : 'Sıraya Gir'}
               </button>
             </>
           )}
@@ -241,47 +251,47 @@ const MachineModal: React.FC<MachineModalProps> = ({ machine, isOpen, onClose, o
           {machine.status === 'BITTI' && (
             <>
               <button onClick={() => setIsClearModalOpen(true)} className="w-full bg-slate-900 hover:bg-slate-800 text-white py-3 rounded-xl text-sm font-semibold transition-colors duration-200 shadow-sm">
-                I took my laundry (Clear)
+                Çamaşırları Aldım (Boşalt)
               </button>
               <button onClick={handleWhatsApp} className="w-full bg-green-500 hover:bg-green-600 text-white py-3 rounded-xl text-sm font-semibold transition-colors duration-200 shadow-sm flex items-center justify-center gap-2">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
-                Send WhatsApp to Owner
+                Sahibine WhatsApp Gönder
               </button>
             </>
           )}
 
           {machine.status === 'BOZUK' && (
             <button disabled className="w-full bg-slate-200 text-slate-500 py-3 rounded-xl text-sm font-semibold cursor-not-allowed">
-              Out of Order
+              Arızalı
             </button>
           )}
 
           {machine.status !== 'BOZUK' && !reportMode && (
             <button onClick={() => setReportMode(true)} className="w-full py-3 bg-white hover:bg-red-50 text-red-600 border border-slate-200 hover:border-red-200 rounded-xl text-sm font-semibold transition-colors duration-200">
-              Report Issue
+              Sorun Bildir
             </button>
           )}
 
           {reportMode && (
             <div className="flex flex-col gap-2 p-3 bg-red-50 rounded-xl border border-red-100">
-              <p className="text-sm text-red-800 font-semibold mb-1 text-center">Select Issue Type</p>
+              <p className="text-sm text-red-800 font-semibold mb-1 text-center">Sorun Tipini Seçin</p>
               <button 
                 onClick={() => handleReport('FULL')} 
                 className="w-full py-2 bg-white hover:bg-red-50 text-red-600 border border-red-200 rounded-lg text-sm font-semibold transition-colors"
               >
-                System says Empty, but actually Full
+                Sistem boş gösteriyor ama dolu
               </button>
               <button 
                 onClick={() => handleReport('BROKEN')} 
                 className="w-full py-2 bg-white hover:bg-red-50 text-red-600 border border-red-200 rounded-lg text-sm font-semibold transition-colors"
               >
-                Machine is Broken
+                Makine Arızalı
               </button>
               <button 
                 onClick={() => setReportMode(false)} 
                 className="w-full py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-sm font-semibold mt-1 transition-colors"
               >
-                Cancel
+                Vazgeç
               </button>
             </div>
           )}

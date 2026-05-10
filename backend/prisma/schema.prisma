@@ -8,9 +8,10 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  phone     String   @unique
-  createdAt DateTime @default(now())
+  id               String   @id @default(uuid())
+  phone            String   @unique
+  createdAt        DateTime @default(now())
+  pushSubscription Json?    // Web Push API subscription object
 
   // Relations
   activeMachines Machine[]
@@ -85,6 +86,7 @@ model Queue {
   userId     String
   joinedAt   DateTime    @default(now())
   status     QueueStatus @default(WAITING)
+  notifiedAt DateTime?   // When the "your turn" notification was sent
 
   // Relations
   machine    Machine     @relation(fields: [machineId], references: [id])

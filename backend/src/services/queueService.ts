@@ -6,17 +6,11 @@ export const joinQueue = async (machineId: string, userId: string) => {
   const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user) throw new Error('User not found. Please re-authenticate.');
 
-  // Anti-spam #1: Aynı makine için zaten sırada mı?
+  // Anti-spam: Aynı makine için zaten sırada mı?
   const existingForMachine = await prisma.queue.findFirst({
     where: { machineId, userId, status: 'WAITING' },
   });
   if (existingForMachine) throw new Error('Already in queue for this machine');
-
-  // Anti-spam #2: Herhangi bir başka makinenin sırasında mı?
-  const existingAnywhere = await prisma.queue.findFirst({
-    where: { userId, status: 'WAITING' },
-  });
-  if (existingAnywhere) throw new Error('Already in queue for another machine. Please leave that queue first');
 
   const entry = await prisma.queue.create({
     data: { machineId, userId },
@@ -40,6 +34,19 @@ export const leaveQueue = async (machineId: string, userId: string) => {
   return prisma.queue.update({
     where: { id: entry.id },
     data: { status: 'CANCELLED' },
+  });
+};
+
+// Skip a pending turn (user declines to use the machine when their turn comes)
+export const skipQueue = async (machineId: string, userId: string) => {
+  const entry = await prisma.queue.findFirst({
+    where: { machineId, userId, status: 'COMPLETED' },
+  });
+  if (!entry) throw new Error('No pending turn found for this machine');
+
+  return prisma.queue.update({
+    where: { id: entry.id },
+    data: { status: 'SKIPPED' },
   });
 };
 
@@ -72,4 +79,13 @@ export const getUserQueues = async (userId: string) => {
   );
 
   return withPositions;
+};
+
+// Check if user has a pending "your turn" that they haven't acted on yet (status = COMPLETED)
+export const getUserPendingTurn = async (userId: string) => {
+  const entry = await prisma.queue.findFirst({
+    where: { userId, status: 'COMPLETED' },
+    include: { machine: { select: { id: true, block: true, floor: true, type: true } } },
+  });
+  return entry;
 };

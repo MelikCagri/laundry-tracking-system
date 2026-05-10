@@ -6,6 +6,7 @@ import machineRoutes from './routes/machineRoutes';
 import userRoutes from './routes/userRoutes';
 import queueRoutes from './routes/queueRoutes';
 import adminRoutes from './routes/adminRoutes';
+import { startCronJobs } from './services/cronService';
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -25,4 +26,5 @@ app.use('/api/admin', adminRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
+  startCronJobs();
 });

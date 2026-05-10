@@ -94,8 +94,19 @@ export const leaveQueue = async (id: string, userId: string) => {
   });
 };
 
+export const skipQueue = async (id: string, userId: string) => {
+  return fetcher(`/machines/${id}/queue/skip`, {
+    method: 'DELETE',
+    body: JSON.stringify({ userId }),
+  });
+};
+
 export const getQueueInfo = async (id: string) => {
   return fetcher(`/machines/${id}/queue`);
+};
+
+export const getUserPendingTurn = async (userId: string) => {
+  return fetcher(`/users/${userId}/pending-turn`);
 };
 
 // --- Admin ---

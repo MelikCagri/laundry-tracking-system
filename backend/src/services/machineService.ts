@@ -1,10 +1,11 @@
 import prisma from '../lib/prisma';
 import { MachineStatus } from '@prisma/client';
+import { sendNotificationToUser } from './notificationService';
 
 // Get all machines
 export const getAllMachines = async () => {
   return prisma.machine.findMany({
-    orderBy: [{ block: 'asc' }, { floor: 'asc' }, { type: 'desc' }],
+    orderBy: [{ block: 'asc' }, { floor: 'asc' }, { type: 'desc' }, { id: 'asc' }],
     include: {
       _count: { select: { queueEntries: { where: { status: 'WAITING' } } } },
     },
@@ -73,11 +74,18 @@ export const clearMachine = async (machineId: string) => {
   });
 
   if (nextInQueue) {
+    // Mark notifiedAt so the cron job can timeout the queue entry if user doesn't respond
     await prisma.queue.update({
       where: { id: nextInQueue.id },
-      data: { status: 'COMPLETED' },
+      data: { status: 'COMPLETED', notifiedAt: new Date() },
     });
-    // TODO: Burada nextInQueue.userId'ye "Sıra size geldi" bildirimi atılacak.
+    // Send "your turn" push notification
+    await sendNotificationToUser(nextInQueue.userId, {
+      title: '🚀 Sıra Sizde!',
+      body: 'Çamaşır makinesi boşaldı. Makineyi kullanmak ister misiniz?',
+      url: '/',
+      tag: `queue-turn-${nextInQueue.machineId}`,
+    });
   }
 
   return prisma.machine.update({

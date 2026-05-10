@@ -5,6 +5,8 @@ import MachineCard from '../components/feature/MachineCard';
 import MachineListRow from '../components/feature/MachineListRow';
 import MachineModal from '../components/feature/MachineModal';
 import AuthModal from '../components/feature/AuthModal';
+import NotificationPermissionBanner from '../components/feature/NotificationPermissionBanner';
+import YourTurnBanner from '../components/feature/YourTurnBanner';
 import { Machine } from '../types';
 
 import { getAllMachines, joinQueue, leaveQueue, getUserQueues } from '../services/api';
@@ -33,18 +35,18 @@ const Dashboard: React.FC = () => {
     try {
       const data = await getAllMachines();
       const user = getSavedUser();
-      let userQueues: string[] = [];
+      // userQueues: array of { machineId, position } objects
+      let userQueues: { machineId: string; position: number }[] = [];
 
       if (user) {
-        const queues = await getUserQueues(user.id);
-        userQueues = queues.map((q: any) => q.machineId);
+        userQueues = await getUserQueues(user.id);
       }
 
       // Per-block-floor display IDs (each floor starts from 1)
       const displayIdMap: Record<string, number> = {};
       // Build a map of machineId -> queue position for current user
       const queuePositionMap: Record<string, number> = {};
-      userQueues.forEach((q: any) => {
+      userQueues.forEach((q) => {
         queuePositionMap[q.machineId] = q.position;
       });
 
@@ -54,7 +56,7 @@ const Dashboard: React.FC = () => {
         return {
           ...m,
           displayId: displayIdMap[key].toString(),
-          isCurrentUserInQueue: userQueues.some((q: any) => q.machineId === m.id),
+          isCurrentUserInQueue: userQueues.some((q) => q.machineId === m.id),
           queuePosition: queuePositionMap[m.id] ?? null,
         };
       });
@@ -106,14 +108,13 @@ const Dashboard: React.FC = () => {
         // Single re-fetch — update both machine list and open modal atomically
         const allData = await getAllMachines();
         const user = getSavedUser();
-        let userQueues: string[] = [];
+        let userQueues: { machineId: string; position: number }[] = [];
         if (user) {
-          const queues = await getUserQueues(user.id);
-          userQueues = queues.map((q: any) => q.machineId);
+          userQueues = await getUserQueues(user.id);
         }
         const displayIdMap2: Record<string, number> = {};
         const queuePositionMap2: Record<string, number> = {};
-        userQueues.forEach((q: any) => {
+        userQueues.forEach((q) => {
           queuePositionMap2[q.machineId] = q.position;
         });
 
@@ -123,7 +124,7 @@ const Dashboard: React.FC = () => {
           return {
             ...machine,
             displayId: displayIdMap2[key].toString(),
-            isCurrentUserInQueue: userQueues.some((q: any) => q.machineId === machine.id),
+            isCurrentUserInQueue: userQueues.some((q) => q.machineId === machine.id),
             queuePosition: queuePositionMap2[machine.id] ?? null,
           };
         });
@@ -157,31 +158,64 @@ const Dashboard: React.FC = () => {
         {/* Header */}
         <header className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
-            <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight mb-2">KYK Laundry</h1>
+            <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight mb-2">KYK Çamaşırhanesi</h1>
             <p className="text-slate-500 text-lg">Gerçek zamanlı makine durumu</p>
           </div>
 
-          {/* View mode toggle */}
-          <div className="flex bg-white rounded-lg p-1 shadow-sm border border-slate-200">
-            <button
-              onClick={() => setViewMode('grid')}
-              className={`px-4 py-1.5 rounded-md text-sm font-bold transition-all ${
-                viewMode === 'grid' ? 'bg-slate-100 text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
-              }`}
-            >
-              Grid
-            </button>
-            <button
-              onClick={() => setViewMode('list')}
-              className={`px-4 py-1.5 rounded-md text-sm font-bold transition-all ${
-                viewMode === 'list' ? 'bg-slate-100 text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
-              }`}
-            >
-              Liste
-            </button>
+          {/* View mode toggle and Auth Controls */}
+          <div className="flex flex-col sm:flex-row items-end gap-3">
+            {getSavedUser() && (
+              <div className="flex items-center gap-3 mr-2 bg-white rounded-lg p-1.5 shadow-sm border border-slate-200">
+                <span className="text-xs font-medium text-slate-500 pl-2">
+                  📱 {getSavedUser()?.phone}
+                </span>
+                <button
+                  onClick={() => {
+                    import('../services/auth').then(({ clearUser }) => {
+                      clearUser();
+                      toast.success('Çıkış yapıldı.');
+                      fetchMachines(); // Refresh UI to hide user-specific info
+                    });
+                  }}
+                  className="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-md transition-colors"
+                >
+                  Çıkış Yap
+                </button>
+              </div>
+            )}
+
+            <div className="flex bg-white rounded-lg p-1 shadow-sm border border-slate-200">
+              <button
+                onClick={() => setViewMode('grid')}
+                className={`px-4 py-1.5 rounded-md text-sm font-bold transition-all ${
+                  viewMode === 'grid' ? 'bg-slate-100 text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                Grid
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                className={`px-4 py-1.5 rounded-md text-sm font-bold transition-all ${
+                  viewMode === 'list' ? 'bg-slate-100 text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                Liste
+              </button>
+            </div>
           </div>
         </header>
 
+        {/* Push notification permission banner */}
+        <NotificationPermissionBanner />
+
+        {/* Your turn banner — shown when the user's queue turn is active */}
+        <YourTurnBanner
+          onUse={(machineId) => {
+            const m = machines.find((mac) => mac.id === machineId);
+            if (m) setSelectedMachine(m);
+          }}
+          onRefresh={fetchMachines}
+        />
         {/* Block Selector */}
         <div className="mb-3 flex gap-2">
           {BLOCKS.map((block) => (
@@ -250,7 +284,7 @@ const Dashboard: React.FC = () => {
                 <section>
                   <h2 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
                     <span className="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center">W</span>
-                    Camasir Makineleri
+                    Çamaşır Makineleri
                   </h2>
                   {viewMode === 'grid' ? (
                     <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-4">
