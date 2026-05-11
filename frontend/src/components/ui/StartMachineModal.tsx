@@ -22,7 +22,7 @@ const StartMachineModal: React.FC<StartMachineModalProps> = ({ isOpen, onSubmit,
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const mins = parseInt(duration, 10);
-    if (isNaN(mins) || mins <= 0 || mins > 180) {
+    if (isNaN(mins) || mins <= 0 || mins > 300) {
       return;
     }
     onSubmit(mins, note.trim() || undefined);
@@ -43,7 +43,7 @@ const StartMachineModal: React.FC<StartMachineModalProps> = ({ isOpen, onSubmit,
             <input 
               type="number"
               min="1"
-              max="180"
+              max="300"
               className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               value={duration}
               onChange={(e) => setDuration(e.target.value)}
