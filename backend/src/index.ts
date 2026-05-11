@@ -13,6 +13,11 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
+// Pinger route (Sunucuyu ayakta tutmak için)
+app.get('/ping', (req: Request, res: Response) => {
+  res.send('Pong! Sunucu ayakta.');
+});
+
 // Health check
 app.get('/api/health', (req: Request, res: Response) => {
   res.json({ status: 'ok', message: 'Laundry Tracking API is running.' });
