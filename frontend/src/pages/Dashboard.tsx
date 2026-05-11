@@ -5,6 +5,7 @@ import MachineCard from '../components/feature/MachineCard';
 import MachineListRow from '../components/feature/MachineListRow';
 import MachineModal from '../components/feature/MachineModal';
 import AuthModal from '../components/feature/AuthModal';
+import LayoutModal from '../components/feature/LayoutModal';
 import NotificationPermissionBanner from '../components/feature/NotificationPermissionBanner';
 import YourTurnBanner from '../components/feature/YourTurnBanner';
 import { Machine } from '../types';
@@ -24,6 +25,7 @@ const Dashboard: React.FC = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isLayoutModalOpen, setIsLayoutModalOpen] = useState(false);
   const [pendingAction, setPendingAction] = useState<((userId: string) => void) | null>(null);
 
 
@@ -269,12 +271,18 @@ const Dashboard: React.FC = () => {
           ))}
         </div>
 
-        {/* Location Badge */}
-        <div className="mb-6">
-          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-700 bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-full">
+        {/* Location Badge & Layout Button */}
+        <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-700 bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-full w-fit">
             <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 inline-block"></span>
             {selectedBlock} Blok &ndash; Kat {selectedFloor}
           </span>
+          <button 
+            onClick={() => setIsLayoutModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg transition-colors shadow-sm w-fit"
+          >
+            🗺️ Çamaşırhane Krokisi
+          </button>
         </div>
 
         {/* Machine List */}
@@ -297,7 +305,7 @@ const Dashboard: React.FC = () => {
               {washingMachines.length > 0 && (
                 <section>
                   <h2 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
-                    <span className="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center">W</span>
+                    <span className="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center font-bold">Ç</span>
                     Çamaşır Makineleri
                   </h2>
                   {viewMode === 'grid' ? (
@@ -325,7 +333,7 @@ const Dashboard: React.FC = () => {
               {dryers.length > 0 && (
                 <section>
                   <h2 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
-                    <span className="w-8 h-8 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center">D</span>
+                    <span className="w-8 h-8 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center font-bold">K</span>
                     Kurutma Makineleri
                   </h2>
                   {viewMode === 'grid' ? (
@@ -376,6 +384,12 @@ const Dashboard: React.FC = () => {
           setPendingAction(null);
         }}
         onSuccess={handleAuthSuccess}
+      />
+      <LayoutModal 
+        isOpen={isLayoutModalOpen}
+        onClose={() => setIsLayoutModalOpen(false)}
+        block={selectedBlock}
+        floor={selectedFloor}
       />
     </div>
   );

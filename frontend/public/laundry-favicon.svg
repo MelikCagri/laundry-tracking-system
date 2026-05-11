@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <defs>
+    <linearGradient id="machineGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6366f1;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#3b82f6;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="windowGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.4" />
+      <stop offset="100%" style="stop-color:#ffffff;stop-opacity:0.1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Main Body -->
+  <rect x="4" y="2" width="24" height="28" rx="5" fill="url(#machineGrad)" />
+  
+  <!-- Top Panel Line -->
+  <line x1="4" y1="10" x2="28" y2="10" stroke="#ffffff" stroke-width="0.5" stroke-opacity="0.3" />
+  
+  <!-- Buttons / Display on Top Panel -->
+  <circle cx="9" cy="6" r="1.5" fill="#ffffff" />
+  <circle cx="13" cy="6" r="1" fill="#ffffff" opacity="0.7"/>
+  <rect x="18" y="5" width="6" height="2" rx="1" fill="#ffffff" opacity="0.8"/>
+  
+  <!-- Washing Machine Window -->
+  <circle cx="16" cy="19" r="7" fill="#1e1b4b" opacity="0.3" />
+  <circle cx="16" cy="19" r="6" fill="url(#windowGrad)" />
+  
+  <!-- Water Wave Effect inside Window -->
+  <path d="M 11.5 19 Q 13.5 17 16 19 T 20.5 19 A 6 6 0 0 1 11.5 19 Z" fill="#60a5fa" opacity="0.8" />
+  <path d="M 11.5 20 Q 13.5 18 16 20 T 20.5 20 A 6 6 0 0 1 11.5 20 Z" fill="#93c5fd" opacity="0.6" />
+</svg>
