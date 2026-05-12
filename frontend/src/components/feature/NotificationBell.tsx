@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Bell, BellOff, AlertCircle } from 'lucide-react';
+import { Bell, BellOff } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { subscribeToPush } from '../../services/pushNotifications';
 import { getSavedUser } from '../../services/auth';
