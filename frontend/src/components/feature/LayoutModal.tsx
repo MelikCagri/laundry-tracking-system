@@ -12,7 +12,7 @@ const LayoutModal: React.FC<LayoutModalProps> = ({ isOpen, onClose, block, floor
   if (!isOpen) return null;
 
   // We only have layouts for block A at the moment
-  const hasLayout = block === 'A';
+  const hasLayout = ['A', 'C', 'D', 'E', 'F'].includes(block);
   const imageUrl = `/krokiler/${block}_${floor}.svg`;
 
   return (
@@ -29,11 +29,11 @@ const LayoutModal: React.FC<LayoutModalProps> = ({ isOpen, onClose, block, floor
             <X className="w-6 h-6" />
           </button>
         </div>
-        
+
         <div className="p-4 overflow-auto flex-1 bg-slate-50 flex items-center justify-center min-h-[300px]">
           {hasLayout ? (
-            <img 
-              src={imageUrl} 
+            <img
+              src={imageUrl}
               alt={`${block} Blok ${floor}. Kat Krokisi`}
               className="max-w-full h-auto object-contain rounded-lg shadow-sm border border-slate-200 bg-white"
             />

@@ -209,7 +209,7 @@ const getGhostAdminId = async (): Promise<string> => {
 };
 
 // [ADMIN] Yeni makine ekle
-export const createMachine = async (floor: number, type: 'WASHER' | 'DRYER', block: 'A' | 'B') => {
+export const createMachine = async (floor: number, type: 'WASHER' | 'DRYER', block: 'A' | 'C' | 'D' | 'E' | 'F') => {
   return prisma.machine.create({
     data: { floor, type, block },
   });

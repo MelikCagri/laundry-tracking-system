@@ -110,7 +110,7 @@ export const getUserPendingTurn = async (userId: string) => {
 };
 
 // --- Admin ---
-export const createMachine = async (floor: number, type: 'WASHER' | 'DRYER', block: 'A' | 'B') => {
+export const createMachine = async (floor: number, type: 'WASHER' | 'DRYER', block: 'A' | 'C' | 'D' | 'E' | 'F') => {
   return fetcher('/admin/machines', {
     method: 'POST',
     body: JSON.stringify({ floor, type, block }),

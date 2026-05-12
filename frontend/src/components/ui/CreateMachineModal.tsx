@@ -2,12 +2,12 @@ import React, { useState, useEffect } from 'react';
 
 interface CreateMachineModalProps {
   isOpen: boolean;
-  onSubmit: (floor: number, type: 'WASHER' | 'DRYER', block: 'A' | 'B') => void;
+  onSubmit: (floor: number, type: 'WASHER' | 'DRYER', block: 'A' | 'C' | 'D' | 'E' | 'F') => void;
   onClose: () => void;
 }
 
 const CreateMachineModal: React.FC<CreateMachineModalProps> = ({ isOpen, onSubmit, onClose }) => {
-  const [block, setBlock] = useState<'A' | 'B'>('A');
+  const [block, setBlock] = useState<'A' | 'C' | 'D' | 'E' | 'F'>('A');
   const [floor, setFloor] = useState('1');
   const [type, setType] = useState<'WASHER' | 'DRYER'>('WASHER');
 
@@ -44,7 +44,7 @@ const CreateMachineModal: React.FC<CreateMachineModalProps> = ({ isOpen, onSubmi
           <div className="mb-4">
             <label className="block text-slate-700 text-sm font-bold mb-2">Blok</label>
             <div className="flex gap-2">
-              {(['A', 'B'] as const).map((b) => (
+              {(['A', 'C', 'D', 'E', 'F'] as const).map((b) => (
                 <button
                   key={b}
                   type="button"

@@ -33,7 +33,10 @@ enum MachineType {
 
 enum Block {
   A
-  B
+  C
+  D
+  E
+  F
 }
 
 model Machine {

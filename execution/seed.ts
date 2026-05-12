@@ -3,8 +3,7 @@ import { PrismaClient, MachineType, MachineStatus, Block } from '../backend/node
 const prisma = new PrismaClient();
 
 // ─── Configuration ─────────────────────────────────────────────────────────
-// Adjust these values when expanding to more blocks or floors.
-const BLOCKS: Block[] = [Block.A, Block.B];
+const BLOCKS: Block[] = [Block.A, Block.C];
 const FLOORS = [1, 2];
 const WASHERS_PER_FLOOR = 5;
 const DRYERS_PER_FLOOR = 3;

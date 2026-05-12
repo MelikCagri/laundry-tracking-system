@@ -26,7 +26,14 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) => 
     setError('');
     
     try {
-      await requireAuth(phone);
+      const user = await requireAuth(phone);
+      
+      // İlk girişte bildirim izni iste (Darlamadan, sadece bir kez)
+      if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
+        const { subscribeToPush } = await import('../../services/pushNotifications');
+        await subscribeToPush(user.id).catch(err => console.error('Initial push sub failed', err));
+      }
+
       onSuccess();
       onClose();
     } catch (err: any) {

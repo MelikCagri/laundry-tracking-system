@@ -6,14 +6,14 @@ import MachineListRow from '../components/feature/MachineListRow';
 import MachineModal from '../components/feature/MachineModal';
 import AuthModal from '../components/feature/AuthModal';
 import LayoutModal from '../components/feature/LayoutModal';
-import NotificationPermissionBanner from '../components/feature/NotificationPermissionBanner';
 import YourTurnBanner from '../components/feature/YourTurnBanner';
+import NotificationBell from '../components/feature/NotificationBell';
 import { Machine } from '../types';
 
 import { getAllMachines, joinQueue, leaveQueue, getUserQueues } from '../services/api';
 import { getSavedUser } from '../services/auth';
 
-const BLOCKS = ['A', 'B'] as const;
+const BLOCKS = ['A', 'C', 'D', 'E', 'F'] as const;
 type BlockType = typeof BLOCKS[number];
 
 const Dashboard: React.FC = () => {
@@ -197,6 +197,8 @@ const Dashboard: React.FC = () => {
                 >
                   Çıkış Yap
                 </button>
+                <div className="h-6 w-px bg-slate-200 mx-1"></div>
+                <NotificationBell />
               </div>
             )}
 
@@ -220,9 +222,6 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
         </header>
-
-        {/* Push notification permission banner */}
-        <NotificationPermissionBanner />
 
         {/* Your turn banner — shown when the user's queue turn is active */}
         <YourTurnBanner

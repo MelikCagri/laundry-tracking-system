@@ -57,7 +57,7 @@ const AdminDashboard: React.FC = () => {
     navigate('/admin');
   };
 
-  const handleCreateMachine = async (floor: number, type: 'WASHER' | 'DRYER', block: 'A' | 'B') => {
+  const handleCreateMachine = async (floor: number, type: 'WASHER' | 'DRYER', block: 'A' | 'C' | 'D' | 'E' | 'F') => {
     try {
       await createMachine(floor, type, block);
       toast.success('Makine başarıyla eklendi.');
