@@ -228,11 +228,12 @@ const MachineModal: React.FC<MachineModalProps> = ({ machine, isOpen, onClose, o
                   >
                     Süreyi Uzat (+15 dk)
                   </button>
-                  {remainingTime <= 0 && (
-                    <button onClick={() => setIsClearModalOpen(true)} className="w-full bg-slate-900 hover:bg-slate-800 text-white py-3 rounded-xl text-sm font-semibold transition-colors duration-200 shadow-sm mt-2">
-                      Çamaşırları Aldım (Boşalt)
-                    </button>
-                  )}
+                  <button 
+                    onClick={() => setIsClearModalOpen(true)} 
+                    className="w-full bg-slate-900 hover:bg-slate-800 text-white py-3 rounded-xl text-sm font-semibold transition-colors duration-200 shadow-sm mt-2"
+                  >
+                    {remainingTime > 0 ? 'Çamaşırlarımı Aldım (Erken Bitir)' : 'Çamaşırlarımı Aldım (Boşalt)'}
+                  </button>
                 </>
               )}
               <button 

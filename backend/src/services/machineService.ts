@@ -62,6 +62,19 @@ export const finishMachine = async (machineId: string) => {
 
 // Clear a machine back to BOS (owner picked up laundry)
 export const clearMachine = async (machineId: string) => {
+  const machine = await prisma.machine.findUnique({ where: { id: machineId } });
+  
+  // Log the finish action if there's an active user
+  if (machine && machine.activeUserId) {
+    await prisma.log.create({
+      data: { 
+        userId: machine.activeUserId, 
+        machineId, 
+        actionType: 'FINISH' 
+      },
+    });
+  }
+
   // Makine sıfırlandığında REPORT_FULL loglarını temizle (sayaç sıfırlansın)
   await prisma.log.deleteMany({
     where: { machineId, actionType: 'REPORT_FULL' },
