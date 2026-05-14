@@ -16,8 +16,8 @@ const LayoutModal: React.FC<LayoutModalProps> = ({ isOpen, onClose, block, floor
   const imageUrl = `/krokiler/${block}_${floor}.svg`;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+      <div className="bg-white rounded-3xl shadow-xl w-[96%] sm:w-full sm:max-w-4xl max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         <div className="flex items-center justify-between p-4 border-b border-slate-100">
           <h2 className="text-xl font-bold text-slate-800">
             {block} Blok - {floor}. Kat Krokisi

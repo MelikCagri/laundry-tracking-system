@@ -42,9 +42,9 @@ const InputModal: React.FC<InputModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
       <div 
-        className="bg-white rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-200 p-6"
+        className="bg-white rounded-3xl w-[92%] sm:w-full sm:max-w-sm overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-200 p-6"
         onClick={(e) => e.stopPropagation()}
       >
         <h3 className="text-xl font-bold text-slate-800 mb-2">{title}</h3>

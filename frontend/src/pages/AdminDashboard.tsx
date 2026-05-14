@@ -103,29 +103,29 @@ const AdminDashboard: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-100 p-6">
       <div className="max-w-6xl mx-auto">
-        <header className="flex justify-between items-center bg-white p-6 rounded-xl shadow-sm mb-6">
+        <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-4 sm:p-6 rounded-xl shadow-sm mb-6 gap-4">
           <div>
             <h1 className="text-2xl font-bold text-slate-800">Yönetim Paneli</h1>
-            <p className="text-slate-500">Sistem ve makine yönetimi</p>
+            <p className="text-slate-500 text-sm">Sistem ve makine yönetimi</p>
           </div>
-          <div className="flex gap-4">
+          <div className="flex gap-2 sm:gap-4 w-full sm:w-auto">
             <button 
               onClick={() => setIsCreateModalOpen(true)}
-              className="flex items-center gap-2 bg-slate-900 text-white px-4 py-2 rounded-lg hover:bg-slate-800 transition shadow-sm font-medium"
+              className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-slate-900 text-white px-4 py-2 rounded-lg hover:bg-slate-800 transition shadow-sm font-medium text-sm"
             >
-              <Plus size={18} /> Yeni Makine
+              <Plus size={18} /> <span className="whitespace-nowrap">Yeni Makine</span>
             </button>
             <button 
               onClick={handleLogout}
-              className="flex items-center gap-2 bg-red-50 text-red-600 px-4 py-2 rounded-lg hover:bg-red-100 transition border border-red-200 font-medium"
+              className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-red-50 text-red-600 px-4 py-2 rounded-lg hover:bg-red-100 transition border border-red-200 font-medium text-sm"
             >
-              <LogOut size={18} /> Çıkış Yap
+              <LogOut size={18} /> <span className="whitespace-nowrap">Çıkış Yap</span>
             </button>
           </div>
         </header>
 
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-slate-200">
-          <table className="w-full text-left border-collapse">
+        <div className="bg-white rounded-xl shadow-sm overflow-x-auto border border-slate-200">
+          <table className="w-full text-left border-collapse min-w-[700px]">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200">
                 <th className="p-4 font-semibold text-slate-600">ID</th>
@@ -139,7 +139,9 @@ const AdminDashboard: React.FC = () => {
             <tbody>
               {machines.map((machine) => (
                 <tr key={machine.id} className="border-b border-slate-100 hover:bg-slate-50 transition">
-                  <td className="p-4 text-sm text-slate-700 font-mono">{machine.id}</td>
+                  <td className="p-4 text-sm text-slate-700 font-mono" title={machine.id}>
+                    {machine.id.substring(0, 5)}...
+                  </td>
                   <td className="p-4">
                     <span className="px-2 py-1 rounded text-xs font-bold bg-slate-900 text-white">
                       {machine.block} Blok
