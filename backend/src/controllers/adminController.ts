@@ -60,8 +60,8 @@ export const createMachine = async (req: Request, res: Response): Promise<void> 
       res.status(400).json({ error: 'type must be WASHER or DRYER' });
       return;
     }
-    if (!['A', 'C', 'D', 'E', 'F'].includes(block)) {
-      res.status(400).json({ error: 'block must be A, C, D, E or F' });
+    if (!['A', 'C', 'D', 'E', 'F', 'Villa'].includes(block)) {
+      res.status(400).json({ error: 'block must be A, C, D, E, F or Villa' });
       return;
     }
     const machine = await machineService.createMachine(Number(floor), type, block);

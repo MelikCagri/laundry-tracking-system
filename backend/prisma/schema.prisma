@@ -37,6 +37,7 @@ enum Block {
   D
   E
   F
+  Villa
 }
 
 model Machine {
