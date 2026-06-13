@@ -57,7 +57,7 @@ const AdminDashboard: React.FC = () => {
     navigate('/admin');
   };
 
-  const handleCreateMachine = async (floor: number, type: 'WASHER' | 'DRYER', block: 'A' | 'C' | 'D' | 'E' | 'F') => {
+  const handleCreateMachine = async (floor: number, type: 'WASHER' | 'DRYER', block: 'A' | 'C' | 'D' | 'E' | 'F' | 'Villa') => {
     try {
       await createMachine(floor, type, block);
       toast.success('Makine başarıyla eklendi.');
@@ -144,7 +144,7 @@ const AdminDashboard: React.FC = () => {
                   </td>
                   <td className="p-4">
                     <span className="px-2 py-1 rounded text-xs font-bold bg-slate-900 text-white">
-                      {machine.block} Blok
+                      {machine.block === 'Villa' ? 'Villa' : `${machine.block} Blok`}
                     </span>
                   </td>
                   <td className="p-4 text-sm text-slate-700 font-bold">{machine.floor}</td>

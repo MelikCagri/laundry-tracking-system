@@ -5,7 +5,7 @@ export interface User {
 
 export interface Machine {
   id: string;
-  block: 'A' | 'C' | 'D' | 'E' | 'F';
+  block: 'A' | 'C' | 'D' | 'E' | 'F' | 'Villa';
   floor: number;
   type: 'WASHER' | 'DRYER';
   status: 'BOS' | 'DOLU' | 'BITTI' | 'BOZUK';

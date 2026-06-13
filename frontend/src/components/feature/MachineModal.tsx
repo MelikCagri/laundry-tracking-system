@@ -312,6 +312,8 @@ const MachineModal: React.FC<MachineModalProps> = ({ machine, isOpen, onClose, o
 
       <StartMachineModal 
         isOpen={isStartModalOpen}
+        machineType={machine.type}
+        machineBlock={machine.block}
         onClose={() => setIsStartModalOpen(false)}
         onSubmit={handleStartSubmit}
       />
