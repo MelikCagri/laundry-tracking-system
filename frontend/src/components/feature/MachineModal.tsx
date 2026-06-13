@@ -21,6 +21,7 @@ const MachineModal: React.FC<MachineModalProps> = ({ machine, isOpen, onClose, o
   const [isStartModalOpen, setIsStartModalOpen] = useState(false);
   const [isExtendModalOpen, setIsExtendModalOpen] = useState(false);
   const [isClearModalOpen, setIsClearModalOpen] = useState(false);
+  const [isReportFullModalOpen, setIsReportFullModalOpen] = useState(false);
 
   const currentUser = getSavedUser();
   const isCurrentUserActive = currentUser && machine?.activeUserId === currentUser.id;
@@ -124,18 +125,32 @@ const MachineModal: React.FC<MachineModalProps> = ({ machine, isOpen, onClose, o
     });
   };
 
-  const handleReport = (issueType: 'FULL' | 'BROKEN') => {
+  const handleReport = (issueType: 'FULL' | 'BROKEN', durationMinutes?: number) => {
     if (!executeWithAuth) return;
     executeWithAuth(async (userId) => {
       try {
-        await reportMachine(machine.id, userId, issueType);
+        await reportMachine(machine.id, userId, issueType, durationMinutes);
         toast.success('Sorun başarıyla bildirildi.');
         onActionSuccess?.();
         handleClose();
       } catch (e: any) {
-        toast.error(e.message);
+        if (e.message?.toLowerCase().includes('user not found') ||
+            e.message?.toLowerCase().includes('foreign key') ||
+            e.message?.toLowerCase().includes('not found')) {
+          clearUser();
+          toast.error('Oturum süresi doldu. Lütfen tekrar numara girin.');
+        } else {
+          toast.error(e.message);
+        }
       }
     });
+  };
+
+  const handleReportFullSubmit = (minutesStr: string) => {
+    const minutes = parseInt(minutesStr, 10);
+    if (isNaN(minutes) || minutes <= 0) return;
+    handleReport('FULL', minutes);
+    setIsReportFullModalOpen(false);
   };
 
   const handleWhatsApp = async () => {
@@ -288,7 +303,7 @@ const MachineModal: React.FC<MachineModalProps> = ({ machine, isOpen, onClose, o
             <div className="flex flex-col gap-2 p-3 bg-red-50 rounded-xl border border-red-100">
               <p className="text-sm text-red-800 font-semibold mb-1 text-center">Sorun Tipini Seçin</p>
               <button 
-                onClick={() => handleReport('FULL')} 
+                onClick={() => setIsReportFullModalOpen(true)} 
                 className="w-full py-2 bg-white hover:bg-red-50 text-red-600 border border-red-200 rounded-lg text-sm font-semibold transition-colors"
               >
                 Sistem boş gösteriyor ama dolu
@@ -336,6 +351,17 @@ const MachineModal: React.FC<MachineModalProps> = ({ machine, isOpen, onClose, o
         confirmText="Evet, Boşalt"
         onConfirm={handleClearConfirm}
         onClose={() => setIsClearModalOpen(false)}
+      />
+
+      <InputModal 
+        isOpen={isReportFullModalOpen}
+        title="Makine Dolu Bildirimi"
+        description="Makinenin tahmini kaç dakika sonra biteceğini giriniz."
+        label="Süre (Dakika)"
+        inputType="number"
+        defaultValue="45"
+        onSubmit={handleReportFullSubmit}
+        onClose={() => setIsReportFullModalOpen(false)}
       />
     </div>
   );

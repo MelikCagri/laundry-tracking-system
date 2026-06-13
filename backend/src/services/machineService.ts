@@ -63,14 +63,14 @@ export const finishMachine = async (machineId: string) => {
 // Clear a machine back to BOS (owner picked up laundry)
 export const clearMachine = async (machineId: string) => {
   const machine = await prisma.machine.findUnique({ where: { id: machineId } });
-  
+
   // Log the finish action if there's an active user
   if (machine && machine.activeUserId) {
     await prisma.log.create({
-      data: { 
-        userId: machine.activeUserId, 
-        machineId, 
-        actionType: 'FINISH' 
+      data: {
+        userId: machine.activeUserId,
+        machineId,
+        actionType: 'FINISH'
       },
     });
   }
@@ -129,8 +129,8 @@ export const extendMachine = async (
 
   return prisma.machine.update({
     where: { id: machineId },
-    data: { 
-      endTime: newEndTime, 
+    data: {
+      endTime: newEndTime,
       durationMinutes: newDuration,
       status: MachineStatus.DOLU // always reset to DOLU just in case it was BITTI
     },
@@ -141,7 +141,8 @@ export const extendMachine = async (
 export const reportMachine = async (
   machineId: string,
   userId: string,
-  issueType: 'FULL' | 'BROKEN'
+  issueType: 'FULL' | 'BROKEN',
+  durationMinutes?: number
 ) => {
   const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user) throw new Error('User not found. Please re-authenticate.');
@@ -166,10 +167,25 @@ export const reportMachine = async (
     where: { machineId, actionType },
   });
 
-  if (issueType === 'FULL' && reportCount >= 3 && machine.status === MachineStatus.BOS) {
+  if (issueType === 'FULL') {
+    if (machine.status !== MachineStatus.BOS) {
+      throw new Error('Machine is not empty');
+    }
+    if (!durationMinutes) {
+      throw new Error('Duration is required for FULL report');
+    }
+
+    const endTime = new Date(Date.now() + durationMinutes * 60 * 1000);
+
     await prisma.machine.update({
       where: { id: machineId },
-      data: { status: MachineStatus.DOLU },
+      data: { 
+        status: MachineStatus.DOLU,
+        endTime,
+        durationMinutes,
+        activeUserId: null,
+        userNote: 'Sistemden boş görünüp dolu işaretlendi',
+      },
     });
     return { reported: true, autoUpdated: true, newStatus: 'DOLU', reportCount };
   }

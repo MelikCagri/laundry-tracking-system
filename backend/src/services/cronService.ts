@@ -1,6 +1,7 @@
 import cron from 'node-cron';
 import prisma from '../lib/prisma';
 import { sendNotificationToUser } from './notificationService';
+import { clearMachine } from './machineService';
 
 const QUEUE_TIMEOUT_MINUTES = 10; // If notified user doesn't act within this time, skip them
 
@@ -51,6 +52,19 @@ export const startCronJobs = () => {
           url: '/',
           tag: `timer-done-${machine.id}`,
         });
+      }
+    }
+
+    // ─── 2.5: Anonymous Machines Auto-Clear ───────────────────────────────────
+    const anonymousMachines = await prisma.machine.findMany({
+      where: { status: 'DOLU', endTime: { not: null }, activeUserId: null },
+    });
+
+    for (const machine of anonymousMachines) {
+      if (!machine.endTime) continue;
+      const msRemaining = machine.endTime.getTime() - now.getTime();
+      if (msRemaining <= 0) {
+        await clearMachine(machine.id);
       }
     }
 

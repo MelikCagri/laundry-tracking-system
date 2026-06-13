@@ -68,10 +68,10 @@ export const extendMachine = async (id: string, extraMinutes: number) => {
   });
 };
 
-export const reportMachine = async (id: string, userId: string, issueType: 'FULL' | 'BROKEN') => {
+export const reportMachine = async (id: string, userId: string, issueType: 'FULL' | 'BROKEN', durationMinutes?: number) => {
   return fetcher(`/machines/${id}/report`, {
     method: 'POST',
-    body: JSON.stringify({ userId, issueType }),
+    body: JSON.stringify({ userId, issueType, durationMinutes }),
   });
 };
 

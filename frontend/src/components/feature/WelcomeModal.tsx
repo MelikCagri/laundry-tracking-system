@@ -51,11 +51,11 @@ const WelcomeModal: React.FC = () => {
               </div>
             </div>
 
-            <div className="flex gap-4 p-4 bg-blue-50 rounded-2xl border border-blue-100">
-              <div className="text-2xl">🗺️</div>
+            <div className="flex gap-4 p-4 bg-rose-50 rounded-2xl border border-rose-100">
+              <div className="text-2xl">⚠️</div>
               <div>
-                <h3 className="font-bold text-blue-900 mb-1">Çamaşırhane Krokisi</h3>
-                <p className="text-sm text-blue-700">Sayfanın üst kısmındaki "Kroki" butonuna tıklayarak makinelerin yerleşim planını harita üzerinden görebilirsiniz.</p>
+                <h3 className="font-bold text-rose-900 mb-1">Akıllı Dolu Bildirimi</h3>
+                <p className="text-sm text-rose-700">Boş görünen ama dolu olan bir makine için "Sorun Bildir" deyip tahmini süreyi girebilirsiniz. Makine anında dolu görünür ve süre bitince otomatik olarak boşa çıkar!</p>
               </div>
             </div>
           </div>
