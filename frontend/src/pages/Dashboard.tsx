@@ -56,7 +56,10 @@ const Dashboard: React.FC = () => {
 
       const withDisplayIds = data.map((m: any) => {
         const key = `${m.block}-${m.floor}-${m.type}`;
-        displayIdMap[key] = (displayIdMap[key] || 0) + 1;
+        if (displayIdMap[key] === undefined) {
+          displayIdMap[key] = (m.block === 'Villa' && m.floor === 2) ? 10 : 0;
+        }
+        displayIdMap[key] += 1;
         return {
           ...m,
           displayId: displayIdMap[key].toString(),
@@ -144,7 +147,10 @@ const Dashboard: React.FC = () => {
 
         const withDisplayIds = allData.map((machine: any) => {
           const key = `${machine.block}-${machine.floor}-${machine.type}`;
-          displayIdMap2[key] = (displayIdMap2[key] || 0) + 1;
+          if (displayIdMap2[key] === undefined) {
+            displayIdMap2[key] = (machine.block === 'Villa' && machine.floor === 2) ? 10 : 0;
+          }
+          displayIdMap2[key] += 1;
           return {
             ...machine,
             displayId: displayIdMap2[key].toString(),
